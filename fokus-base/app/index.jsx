@@ -216,6 +216,7 @@ Funcionamos de terça a domingo
                     {'\n'}Item: {ultimoPedido.item}
                     {'\n'}Qtd: {ultimoPedido.quantidade}
                     {'\n'}Obs.: {ultimoPedido.obs||'Nenhuma'}
+                    {'\n'}Bebida: {ultimoPedido.bebida || 'Nenhuma selecionada'}
                   </Text>
                   <View style={styles.opcoesRow}>
                     <TouchableOpacity style={styles.cancelarBtn} onPress={() => {
