@@ -26,7 +26,7 @@ O projeto faz parte do **Projeto Integrador - Season 3**, com o objetivo de faci
 ### 📦 Instalação
 
 ```bash
-git clone https://github.com/tello24/ProjetoIntegradorSeason3_ChatReact.git
+git clone https://github.com/tello24/ProjetoIntegradorSeason3_ChatReact
 cd ProjetoIntegradorSeason3_ChatBotReact/fokus-base
 npm install
 ```
