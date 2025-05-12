@@ -39,11 +39,22 @@ export default function PainelCozinha() {
     await AsyncStorage.setItem('todosPedidos', JSON.stringify(atualizados));
   };
 
-  const excluirPedido = async (index) => {
-    const atualizados = pedidos.filter((_, i) => i !== index);
-    setPedidos(atualizados);
-    await AsyncStorage.setItem('todosPedidos', JSON.stringify(atualizados));
-  };
+ const excluirPedido = async (index) => {
+  const atualizados = pedidos.filter((_, i) => i !== index);
+  setPedidos(atualizados);
+  await AsyncStorage.setItem('todosPedidos', JSON.stringify(atualizados));
+
+  // Verifica se o pedido excluído é o mesmo que está salvo como "ultimoPedido"
+  const ultimo = await AsyncStorage.getItem('ultimoPedido');
+  if (ultimo) {
+    const pedidoExcluido = pedidos[index];
+    const pedidoSalvo = JSON.parse(ultimo);
+    if (pedidoExcluido?.nome === pedidoSalvo?.nome && pedidoExcluido?.ra === pedidoSalvo?.ra) {
+      await AsyncStorage.removeItem('ultimoPedido');
+    }
+  }
+};
+
 
   return (
     <ImageBackground
@@ -79,8 +90,11 @@ export default function PainelCozinha() {
             <View key={index} style={styles.card}>
               <Text>👤 {ped.nome} (RA: {ped.ra})</Text>
               <Text>🍽️ {ped.item} (x{ped.quantidade})</Text>
+              <Text>🥤 Bebida: {ped.bebida || 'Nenhuma selecionada'}</Text>
               <Text>📝 {ped.obs || 'Sem observações'}</Text>
               <Text>Status: {ped.status || 'Pendente'}</Text>
+              <Text>🕒 Feito em: {ped.dataHora || 'Data não disponível'}</Text>
+
 
               {ped.status === 'Em andamento' ? (
                 <TouchableOpacity style={styles.botaoAcao} onPress={() => atualizarStatus(index, 'Concluído')}>
