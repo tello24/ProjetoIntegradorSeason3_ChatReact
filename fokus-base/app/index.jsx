@@ -71,6 +71,20 @@ export default function Index() {
     flatListRef.current?.scrollToEnd({ animated: true });
   }, [conversas]);
 
+  // Após os useEffect:
+const salvarReservaGlobal = async (reserva) => {
+  const existentes = await AsyncStorage.getItem('todasReservas');
+  const lista = existentes ? JSON.parse(existentes) : [];
+  await AsyncStorage.setItem('todasReservas', JSON.stringify([...lista, reserva]));
+};
+
+const salvarPedidoGlobal = async (pedido) => {
+  const existentes = await AsyncStorage.getItem('todosPedidos');
+  const lista = existentes ? JSON.parse(existentes) : [];
+  await AsyncStorage.setItem('todosPedidos', JSON.stringify([...lista, { ...pedido, status: 'Pendente' }]));
+};
+
+
   // Funções de envio e respostas
   const enviarMensagem = texto => {
     const msg = texto?.trim() || mensagem.trim();
@@ -158,8 +172,10 @@ Funcionamos de terça a domingo
                     reservaInicial={item.tipo === 'editar-formulario' ? ultimaReserva : { nome:'',data:'',horario:'',pessoas:'',telefone:'',obs:'' }}
                     onConfirmar={reserva => {
                       setUltimaReserva(reserva);
+                      salvarReservaGlobal(reserva); // <-- aqui adiciona
                       setConversas(prev => [...prev, { id:Date.now().toString(), tipo:'opcoes-reserva', de:'bot' }]);
                     }}
+
                   />
                 </AnimatedBalao>
               );
@@ -170,9 +186,11 @@ Funcionamos de terça a domingo
                 <AnimatedBalao style={[styles.balao, styles.bot]}>
                   <FormularioPedido
                     onConfirmar={pedido => {
-                      setUltimoPedido(pedido);
+                     setUltimoPedido(pedido);
+                      salvarPedidoGlobal(pedido); // <-- aqui adiciona
                       setConversas(prev => [...prev, { id:Date.now().toString(), tipo:'opcoes-pedido', de:'bot' }]);
-                    }}
+                        }}
+
                   />
                 </AnimatedBalao>
               );
