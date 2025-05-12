@@ -20,18 +20,17 @@ export default function PainelCozinha() {
   const [reservas, setReservas] = useState([]);
 
   useEffect(() => {
-    const carregarDados = async () => {
-      const dadosPedidos = await AsyncStorage.getItem('todosPedidos');
-      const dadosReservas = await AsyncStorage.getItem('todasReservas');
+  const carregarDados = async () => {
+    const dadosPedidos = await AsyncStorage.getItem('todosPedidos');
+    const dadosReservas = await AsyncStorage.getItem('todasReservas');
 
-      if (dadosPedidos) setPedidos(JSON.parse(dadosPedidos));
-      if (dadosReservas) setReservas(JSON.parse(dadosReservas));
-    };
+    if (dadosPedidos) setPedidos(JSON.parse(dadosPedidos));
+    if (dadosReservas) setReservas(JSON.parse(dadosReservas));
+  };
 
-    // const unsubscribe = router.addListener('focus', carregarDados);
-    // carregarDados();
-    // return unsubscribe;
-  }, [router]);
+  carregarDados();
+}, []);
+
 
   const atualizarStatus = async (index, novoStatus) => {
     const atualizados = [...pedidos];
