@@ -1,4 +1,3 @@
-// Novo FormularioPedido.jsx igual ao FormularioReserva
 import React, { useState } from 'react';
 import {
   View,
@@ -12,9 +11,18 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
   const [nome, setNome] = useState(pedidoInicial.nome || '');
   const [ra, setRA] = useState(pedidoInicial.ra || '');
   const [item, setItem] = useState(pedidoInicial.item || '');
-  const [quantidade, setQuantidade] = useState(parseInt(pedidoInicial.quantidade) || 1);
+  const [quantidade, setQuantidade] = useState(
+    parseInt(pedidoInicial.quantidade) || 1
+  );
   const [obs, setObs] = useState(pedidoInicial.obs || '');
   const [mostrarItens, setMostrarItens] = useState(false);
+
+  // Estados para bebida no final do formulário (opcional)
+  const [querBebida, setQuerBebida] = useState(
+    pedidoInicial.bebida ? true : false
+  );
+  const [bebida, setBebida] = useState(pedidoInicial.bebida || '');
+  const opcoesBebida = ['Água', 'Coca Cola', 'Coca Cola Zero', 'Suco'];
 
   const opcoesItem = [
     'Filé de Frango Grelhado',
@@ -25,22 +33,29 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
     'Salada com Omelete',
     'Salada com Atum',
     'Salada Caesar',
-    'Salada com Kibe Vegano ou Quiche'
+    'Salada com Kibe Vegano ou Quiche',
   ];
-
-  const confirmar = () => {
-    if (!nome || !ra || !item || quantidade < 1) {
-      alert('Por favor, preencha todos os campos obrigatórios!');
-      return;
-    }
-
-    onConfirmar({ nome, ra, item, quantidade: quantidade.toString(), obs });
-  };
 
   const alterarQuantidade = (delta) => {
     setQuantidade((prev) => {
       const nova = prev + delta;
       return nova < 1 ? 1 : nova > 10 ? 10 : nova;
+    });
+  };
+
+  const confirmar = () => {
+    // valida apenas campos obrigatórios iniciais
+    if (!nome || !ra || !item || quantidade < 1) {
+      alert('Por favor, preencha todos os campos obrigatórios!');
+      return;
+    }
+    onConfirmar({
+      nome,
+      ra,
+      item,
+      quantidade: quantidade.toString(),
+      obs,
+      bebida: querBebida ? bebida : null,
     });
   };
 
@@ -64,7 +79,10 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
         onChangeText={setRA}
       />
 
-      <TouchableOpacity onPress={() => setMostrarItens(!mostrarItens)} style={styles.input}>
+      <TouchableOpacity
+        onPress={() => setMostrarItens(!mostrarItens)}
+        style={styles.input}
+      >
         <Text style={{ color: '#000' }}>{item || 'Selecionar Item*'}</Text>
       </TouchableOpacity>
 
@@ -79,18 +97,31 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
               }}
               style={[styles.opcaoBotao, item === it && styles.opcaoSelecionada]}
             >
-              <Text style={styles.opcaoTexto}>{it}</Text>
+              <Text
+                style={[
+                  styles.opcaoTexto,
+                  item === it && styles.opcaoTextoSelecionado,
+                ]}
+              >
+                {it}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
       )}
 
       <View style={styles.seletorQuantidade}>
-        <TouchableOpacity onPress={() => alterarQuantidade(-1)} style={styles.botaoQtd}>
+        <TouchableOpacity
+          onPress={() => alterarQuantidade(-1)}
+          style={styles.botaoQtd}
+        >
           <Text style={styles.qtdTexto}>−</Text>
         </TouchableOpacity>
         <Text style={styles.qtdValor}>{quantidade}</Text>
-        <TouchableOpacity onPress={() => alterarQuantidade(1)} style={styles.botaoQtd}>
+        <TouchableOpacity
+          onPress={() => alterarQuantidade(1)}
+          style={styles.botaoQtd}
+        >
           <Text style={styles.qtdTexto}>+</Text>
         </TouchableOpacity>
       </View>
@@ -102,6 +133,58 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
         value={obs}
         onChangeText={setObs}
       />
+
+      {/* Pergunta sobre bebida opcional no final */}
+      <Text style={styles.label}>Deseja adicionar bebida?</Text>
+      <View style={styles.opcoesLinha}>
+        <TouchableOpacity
+          style={[styles.opcaoBotao, querBebida && styles.opcaoSelecionada]}
+          onPress={() => setQuerBebida(true)}
+        >
+          <Text
+            style={[
+              styles.opcaoTexto,
+              querBebida && styles.opcaoTextoSelecionado,
+            ]}
+          >
+            Sim
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.opcaoBotao, !querBebida && styles.opcaoSelecionada]}
+          onPress={() => setQuerBebida(false)}
+        >
+          <Text
+            style={[
+              styles.opcaoTexto,
+              !querBebida && styles.opcaoTextoSelecionado,
+            ]}
+          >
+            Não
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {querBebida && (
+        <View style={styles.opcoesLinha}>
+          {opcoesBebida.map((b) => (
+            <TouchableOpacity
+              key={b}
+              style={[styles.opcaoBotao, bebida === b && styles.opcaoSelecionada]}
+              onPress={() => setBebida(b)}
+            >
+              <Text
+                style={[
+                  styles.opcaoTexto,
+                  bebida === b && styles.opcaoTextoSelecionado,
+                ]}
+              >
+                {b}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       <TouchableOpacity onPress={confirmar} style={styles.botaoConfirmar}>
         <Text style={styles.confirmarTexto}>✅ Confirmar Pedido</Text>
@@ -129,6 +212,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 8,
   },
+  label: {
+    marginBottom: 4,
+    fontWeight: 'bold',
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -140,8 +227,8 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   opcoesLinha: {
-    flexDirection: 'column',
-    gap: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     marginBottom: 12,
   },
   opcaoBotao: {
@@ -149,6 +236,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: '#eee',
     borderRadius: 6,
+    marginRight: 8,
+    marginBottom: 8,
   },
   opcaoSelecionada: {
     backgroundColor: '#c0392b',
@@ -156,6 +245,9 @@ const styles = StyleSheet.create({
   opcaoTexto: {
     color: '#000',
     fontWeight: 'bold',
+  },
+  opcaoTextoSelecionado: {
+    color: '#fff',
   },
   seletorQuantidade: {
     flexDirection: 'row',
