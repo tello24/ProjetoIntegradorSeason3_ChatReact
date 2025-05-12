@@ -79,11 +79,25 @@ const salvarReservaGlobal = async (reserva) => {
 };
 
 const salvarPedidoGlobal = async (pedido) => {
-  const existentes = await AsyncStorage.getItem('todosPedidos');
-  const lista = existentes ? JSON.parse(existentes) : [];
-  await AsyncStorage.setItem('todosPedidos', JSON.stringify([...lista, { ...pedido, status: 'Pendente' }]));
-};
+  try {
+    const pedidosExistentes = await AsyncStorage.getItem('todosPedidos');
+    const lista = pedidosExistentes ? JSON.parse(pedidosExistentes) : [];
+    
+    const dataHora = new Date().toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
+    const atualizado = [...lista, { ...pedido, status: 'Pendente', dataHora }];
+
+    await AsyncStorage.setItem('todosPedidos', JSON.stringify(atualizado));
+  } catch (e) {
+    console.log('Erro ao salvar pedido na cozinha:', e);
+  }
+};
 
   // Funções de envio e respostas
   const enviarMensagem = texto => {
