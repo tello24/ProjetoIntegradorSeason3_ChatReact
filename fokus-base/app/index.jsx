@@ -210,33 +210,59 @@ Funcionamos de terça a domingo
               );
             }
             // Opções Reserva
-            if (item.tipo === 'opcoes-reserva' && ultimaReserva) {
-              return (
-                <AnimatedBalao style={[styles.balao, styles.bot]}>
-                  <Text style={styles.textoBot}>
-                    📋 <Text style={{ fontWeight:'bold' }}>Sua Reserva</Text>
-                    {'\n'}Status: confirmada
-                    {'\n'}Nome: {ultimaReserva.nome}
-                    {'\n'}Data: {ultimaReserva.data} às {ultimaReserva.horario}
-                    {'\n'}Pessoas: {ultimaReserva.pessoas}
-                    {'\n'}Telefone: {ultimaReserva.telefone}
-                    {'\n'}Obs.: {ultimaReserva.obs||'Nenhuma'}
-                  </Text>
-                  <View style={styles.opcoesRow}>
-                    <TouchableOpacity style={styles.cancelarBtn} onPress={() => {
-                      setUltimaReserva(null);
-                      AsyncStorage.removeItem('ultimaReserva');
-                      setConversas(prev => [...prev, { id:Date.now().toString(), texto:'❌ Reserva cancelada com sucesso.', de:'bot' }]);
-                    }}>
-                      <Text style={styles.cancelarTexto}>Cancelar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.alterarBtn} onPress={() => setConversas(prev => [...prev, { id:Date.now().toString(), tipo:'editar-formulario', de:'bot' }])}>
-                      <Text style={styles.alterarTexto}>Alterar</Text>
-                    </TouchableOpacity>
-                  </View>
-                </AnimatedBalao>
+           if (item.tipo === 'opcoes-reserva' && ultimaReserva) {
+  return (
+    <AnimatedBalao style={[styles.balao, styles.bot]}>
+      <Text style={styles.textoBot}>
+        📋 <Text style={{ fontWeight:'bold' }}>Sua Reserva</Text>
+        {'\n'}Status: confirmada
+        {'\n'}Nome: {ultimaReserva.nome}
+        {'\n'}Data: {ultimaReserva.data} às {ultimaReserva.horario}
+        {'\n'}Pessoas: {ultimaReserva.pessoas}
+        {'\n'}Telefone: {ultimaReserva.telefone}
+        {'\n'}Obs.: {ultimaReserva.obs || 'Nenhuma'}
+      </Text>
+      <View style={styles.opcoesRow}>
+        <TouchableOpacity
+          style={styles.cancelarBtn}
+          onPress={async () => {
+            setUltimaReserva(null);
+            await AsyncStorage.removeItem('ultimaReserva');
+
+            // Remover também do painel da cozinha
+            const todas = await AsyncStorage.getItem('todasReservas');
+            if (todas) {
+              const lista = JSON.parse(todas);
+              const novaLista = lista.filter(
+                r => r.telefone !== ultimaReserva.telefone || r.data !== ultimaReserva.data
               );
+              await AsyncStorage.setItem('todasReservas', JSON.stringify(novaLista));
             }
+
+            setConversas(prev => [
+              ...prev,
+              { id: Date.now().toString(), texto: '❌ Reserva cancelada com sucesso.', de: 'bot' },
+            ]);
+          }}
+        >
+          <Text style={styles.cancelarTexto}>Cancelar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.alterarBtn}
+          onPress={() =>
+            setConversas(prev => [
+              ...prev,
+              { id: Date.now().toString(), tipo: 'editar-formulario', de: 'bot' },
+            ])
+          }
+        >
+          <Text style={styles.alterarTexto}>Alterar</Text>
+        </TouchableOpacity>
+      </View>
+    </AnimatedBalao>
+  );
+}
             // Opções Pedido
             if (item.tipo === 'opcoes-pedido' && ultimoPedido) {
               return (
@@ -303,20 +329,73 @@ Funcionamos de terça a domingo
         </View>
 
         {/* Botões rápidos */}
-        <View style={styles.botoesRodape}>
-          {[
-            { label:'🍽️ Cardápio', onPress:responderCardapio },
-            { label:'🕒 Horários', onPress:responderHorario },
-            { label:'📅 Reservar', onPress:()=>setConversas(prev=>[...prev,{id:Date.now().toString(),tipo:'formulario',de:'bot'}]) },
-            { label:'📋 Ver Reserva', onPress:()=>ultimaReserva?setConversas(prev=>[...prev,{id:Date.now().toString(),tipo:'opcoes-reserva',de:'bot'}]):alert('Nenhuma reserva ainda') },
-            { label:'🛒 Fazer Pedido', onPress:()=>setConversas(prev=>[...prev,{id:Date.now().toString(),tipo:'pedido',de:'bot'}]) },
-            { label:'📦 Ver Pedido', onPress:()=>ultimoPedido?setConversas(prev=>[...prev,{id:Date.now().toString(),tipo:'opcoes-pedido',de:'bot'}]):alert('Nenhum pedido ainda') },
-          ].map(btn=>(
-            <TouchableOpacity key={btn.label} style={styles.botaoRodape} onPress={btn.onPress}>
-              <Text style={styles.botaoTextoRodape}>{btn.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+       {/* Botões rápidos */}
+<View style={styles.botoesRodape}>
+  {[
+    { label: '🍽️ Cardápio', onPress: responderCardapio },
+    { label: '🕒 Horários', onPress: responderHorario },
+    {
+      label: '📅 Reservar',
+      onPress: () =>
+        setConversas((prev) => [
+          ...prev,
+          { id: Date.now().toString(), tipo: 'formulario', de: 'bot' },
+        ]),
+    },
+    {
+      label: '📋 Ver Reserva',
+      onPress: () => {
+        if (ultimaReserva) {
+          setConversas((prev) => [
+            ...prev,
+            { id: Date.now().toString(), tipo: 'opcoes-reserva', de: 'bot' },
+          ]);
+        } else {
+          setConversas((prev) => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              texto: '📋 Você não tem reservas ativas. Deseja fazer uma?',
+              de: 'bot',
+            },
+          ]);
+        }
+      },
+    },
+    {
+      label: '🛒 Fazer Pedido',
+      onPress: () =>
+        setConversas((prev) => [
+          ...prev,
+          { id: Date.now().toString(), tipo: 'pedido', de: 'bot' },
+        ]),
+    },
+    {
+      label: '📦 Ver Pedido',
+      onPress: () => {
+        if (ultimoPedido) {
+          setConversas((prev) => [
+            ...prev,
+            { id: Date.now().toString(), tipo: 'opcoes-pedido', de: 'bot' },
+          ]);
+        } else {
+          setConversas((prev) => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              texto: '📦 Você não tem pedidos ativos. Deseja fazer um?',
+              de: 'bot',
+            },
+          ]);
+        }
+      },
+    },
+  ].map((btn) => (
+    <TouchableOpacity key={btn.label} style={styles.botaoRodape} onPress={btn.onPress}>
+      <Text style={styles.botaoTextoRodape}>{btn.label}</Text>
+    </TouchableOpacity>
+  ))}
+</View>
 
         {/* Acesso Cozinha */}
         <View style={styles.acessoRodape}>
