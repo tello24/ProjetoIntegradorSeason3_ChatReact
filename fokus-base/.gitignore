@@ -1,0 +1,54 @@
+# Node modules
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+.expo-shared/
+expo-env.d.ts
+
+# Output and cache
+build/
+android/app/build/
+ios/build/
+ios/Pods/
+*.log
+
+# OS-specific
+.DS_Store
+*.pem
+
+# Local env files
+.env*
+.env.*.local
+
+# Metro cache
+.metro-cache/
+.metro-health-check/
+
+# Android/Java
+*.apk
+*.jks
+*.keystore
+
+# iOS/Swift
+*.xcworkspace
+*.xcuserstate
+*.xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata
+
+# TypeScript
+*.tsbuildinfo
+
+# NPM/Yarn logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Backup and patch files
+*.orig.*
+*.rej
+
+# App example or development-only folders
+app-example/
