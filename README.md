@@ -16,7 +16,7 @@ ChatBot interativo para restaurantes desenvolvido com React Native, Expo e NSIS.
 ### Instalação
 ```bash
 git clone https://github.com/tello24/ProjetoIntegradorSeason3_ChatReact.git
-cd ProjetoIntegradorSeason3_ChatBotReact
+cd ProjetoIntegradorSeason3_ChatBotReact/fokus-base
 npm install
 ```
 
@@ -30,16 +30,12 @@ npm start
 
 🔧 Solução de Problemas
 ```
--> Electron não encontrado: <-
-rm -rf node_modules package-lock.json
-npm install
-
-Erros no build: Verifique o caminho do main no package.json
+nada por enquanto.
 ```
 
 
 ### LOGIN PARA COZINHA (ADM) ###
 ```
-User: Cozinha@poliedro.com
+User: Cozinha@sistemapoliedro.com.br
 Senha: teste123
 ```
