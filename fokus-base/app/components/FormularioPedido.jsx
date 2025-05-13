@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import axios from 'axios';
 
 export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
   const [nome, setNome] = useState(pedidoInicial.nome || '');
@@ -18,270 +19,112 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
   const [mostrarItens, setMostrarItens] = useState(false);
 
   // Estados para bebida no final do formulário (opcional)
-  const [querBebida, setQuerBebida] = useState(
-    pedidoInicial.bebida ? true : false
-  );
+  const [querBebida, setQuerBebida] = useState(pedidoInicial.bebida ? true : false);
   const [bebida, setBebida] = useState(pedidoInicial.bebida || '');
   const opcoesBebida = ['Água', 'Coca Cola', 'Coca Cola Zero', 'Suco'];
 
   const opcoesItem = [
     'Filé de Frango Grelhado',
     'Linguiça Toscana Grelhada',
-    'Linguiça Calabresa Acebolada',
-    'Nuggets de Frango',
-    'Salada com Filé de Frango',
-    'Salada com Omelete',
-    'Salada com Atum',
-    'Salada Caesar',
-    'Salada com Kibe Vegano ou Quiche',
+    'Linguiça de Frango Grelhada',
+    'Filé de Peixe',
+    'Frango à Parmegiana',
   ];
 
-  const alterarQuantidade = (delta) => {
-    setQuantidade((prev) => {
-      const nova = prev + delta;
-      return nova < 1 ? 1 : nova > 10 ? 10 : nova;
-    });
-  };
-
-  const confirmar = () => {
-    // valida apenas campos obrigatórios iniciais
-    if (!nome || !ra || !item || quantidade < 1) {
-      alert('Por favor, preencha todos os campos obrigatórios!');
+  // Função para enviar o pedido para a API
+  const handleSubmit = async () => {
+    if (!nome || !ra || !item || !quantidade) {
+      alert('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
-    onConfirmar({
+
+    const pedido = {
       nome,
-      ra,
-      item,
-      quantidade: quantidade.toString(),
+      ra,       // Certificando que o RA está sendo enviado
+      item,     // Certificando que o item está sendo enviado
+      quantidade,
       obs,
-      bebida: querBebida ? bebida : null,
-    });
+      bebida: querBebida ? bebida : null, // Se quiser bebida, inclui, caso contrário, não
+    };
+
+    try {
+      // Enviando os dados para a API no endpoint /pratos
+      await axios.post('http://localhost:3001/pratos', pedido);  // Correção para /pratos
+      alert('Pedido enviado com sucesso!');
+      onConfirmar(); // Se a função onConfirmar for passada como prop
+    } catch (error) {
+      console.log(error);
+      alert('Erro ao enviar o pedido');
+    }
   };
 
   return (
-    <View style={styles.balaoPedido}>
-      <Text style={styles.titulo}>🛒 Fazer Pedido</Text>
-
+    <View style={styles.container}>
+      <Text>Nome</Text>
       <TextInput
-        placeholder="Seu Nome*"
-        placeholderTextColor="#888"
-        style={styles.input}
         value={nome}
         onChangeText={setNome}
+        placeholder="Digite seu nome"
+        style={styles.input}
       />
 
+      <Text>RA</Text>
       <TextInput
-        placeholder="RA do Aluno*"
-        placeholderTextColor="#888"
-        style={styles.input}
         value={ra}
         onChangeText={setRA}
+        placeholder="Digite seu RA"
+        style={styles.input}
       />
 
-      <TouchableOpacity
-        onPress={() => setMostrarItens(!mostrarItens)}
-        style={styles.input}
-      >
-        <Text style={{ color: '#000' }}>{item || 'Selecionar Item*'}</Text>
-      </TouchableOpacity>
-
-      {mostrarItens && (
-        <View style={styles.opcoesLinha}>
-          {opcoesItem.map((it) => (
-            <TouchableOpacity
-              key={it}
-              onPress={() => {
-                setItem(it);
-                setMostrarItens(false);
-              }}
-              style={[styles.opcaoBotao, item === it && styles.opcaoSelecionada]}
-            >
-              <Text
-                style={[
-                  styles.opcaoTexto,
-                  item === it && styles.opcaoTextoSelecionado,
-                ]}
-              >
-                {it}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-
-      <View style={styles.seletorQuantidade}>
-        <TouchableOpacity
-          onPress={() => alterarQuantidade(-1)}
-          style={styles.botaoQtd}
-        >
-          <Text style={styles.qtdTexto}>−</Text>
-        </TouchableOpacity>
-        <Text style={styles.qtdValor}>{quantidade}</Text>
-        <TouchableOpacity
-          onPress={() => alterarQuantidade(1)}
-          style={styles.botaoQtd}
-        >
-          <Text style={styles.qtdTexto}>+</Text>
-        </TouchableOpacity>
-      </View>
-
+      <Text>Item</Text>
       <TextInput
-        placeholder="Observações"
-        placeholderTextColor="#888"
+        value={item}
+        onChangeText={setItem}
+        placeholder="Escolha o item"
         style={styles.input}
+      />
+
+      <Text>Quantidade</Text>
+      <TextInput
+        value={quantidade.toString()}
+        onChangeText={(text) => setQuantidade(parseInt(text))}
+        keyboardType="numeric"
+        style={styles.input}
+      />
+
+      <Text>Observações</Text>
+      <TextInput
         value={obs}
         onChangeText={setObs}
+        placeholder="Observações adicionais"
+        style={styles.input}
       />
 
-      {/* Pergunta sobre bebida opcional no final */}
-      <Text style={styles.label}>Deseja adicionar bebida?</Text>
-      <View style={styles.opcoesLinha}>
-        <TouchableOpacity
-          style={[styles.opcaoBotao, querBebida && styles.opcaoSelecionada]}
-          onPress={() => setQuerBebida(true)}
-        >
-          <Text
-            style={[
-              styles.opcaoTexto,
-              querBebida && styles.opcaoTextoSelecionado,
-            ]}
-          >
-            Sim
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.opcaoBotao, !querBebida && styles.opcaoSelecionada]}
-          onPress={() => setQuerBebida(false)}
-        >
-          <Text
-            style={[
-              styles.opcaoTexto,
-              !querBebida && styles.opcaoTextoSelecionado,
-            ]}
-          >
-            Não
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {querBebida && (
-        <View style={styles.opcoesLinha}>
-          {opcoesBebida.map((b) => (
-            <TouchableOpacity
-              key={b}
-              style={[styles.opcaoBotao, bebida === b && styles.opcaoSelecionada]}
-              onPress={() => setBebida(b)}
-            >
-              <Text
-                style={[
-                  styles.opcaoTexto,
-                  bebida === b && styles.opcaoTextoSelecionado,
-                ]}
-              >
-                {b}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-
-      <TouchableOpacity onPress={confirmar} style={styles.botaoConfirmar}>
-        <Text style={styles.confirmarTexto}>✅ Confirmar Pedido</Text>
+      <TouchableOpacity onPress={handleSubmit} style={styles.button}>
+        <Text style={styles.buttonText}>Confirmar Pedido</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  balaoPedido: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 12,
-    marginVertical: 6,
-    maxWidth: 320,
-    alignSelf: 'flex-start',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  titulo: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  label: {
-    marginBottom: 4,
-    fontWeight: 'bold',
+  container: {
+    padding: 20,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
     marginBottom: 10,
-    backgroundColor: '#fff',
-    color: '#000',
+    padding: 5,
+    borderRadius: 5,
   },
-  opcoesLinha: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 12,
-  },
-  opcaoBotao: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: '#eee',
-    borderRadius: 6,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  opcaoSelecionada: {
-    backgroundColor: '#c0392b',
-  },
-  opcaoTexto: {
-    color: '#000',
-    fontWeight: 'bold',
-  },
-  opcaoTextoSelecionado: {
-    color: '#fff',
-  },
-  seletorQuantidade: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    marginBottom: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  botaoQtd: {
-    backgroundColor: '#eee',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  qtdTexto: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  qtdValor: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  botaoConfirmar: {
-    backgroundColor: '#2ecc71',
-    paddingVertical: 10,
-    borderRadius: 8,
+  button: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 5,
     alignItems: 'center',
   },
-  confirmarTexto: {
-    color: '#fff',
+  buttonText: {
+    color: 'white',
     fontWeight: 'bold',
   },
 });
