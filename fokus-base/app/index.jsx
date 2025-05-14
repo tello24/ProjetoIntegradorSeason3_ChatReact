@@ -9,13 +9,16 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
+  Pressable,              
   KeyboardAvoidingView,
   Platform,
   Animated,
 } from 'react-native';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FormularioReserva from './components/FormularioReserva';
 import FormularioPedido from './components/FormularioPedido';
+
 
 // Componente para fade-in das mensagens
 const AnimatedBalao = ({ style, children }) => {
@@ -282,20 +285,35 @@ function encontrarComandoSemelhante(input, comandos) {
               );
             }
             // Formulário de Pedido
-            if (item.tipo === 'pedido') {
-              return (
-                <AnimatedBalao style={[styles.balao, styles.bot]}>
-                  <FormularioPedido
-                    onConfirmar={pedido => {
-                     setUltimoPedido(pedido);
-                      salvarPedidoGlobal(pedido); // <-- aqui adiciona
-                      setConversas(prev => [...prev, { id:Date.now().toString(), tipo:'opcoes-pedido', de:'bot' }]);
-                        }}
+           // de
+if (item.tipo === 'pedido') {
+  return (
+    <AnimatedBalao style={[styles.balao, styles.bot]}>
+      <FormularioPedido
+        onConfirmar={pedido => {
+          setUltimoPedido(pedido);
+          salvarPedidoGlobal(pedido);
+          setConversas(prev => {
+            const semForm = prev.filter(i => i.tipo !== 'pedido');
+            return [
+              ...semForm,
+              { 
+                id: (Date.now() + 1).toString(), 
+                texto: '✅ Pedido realizado com sucesso!', 
+                de: 'bot' 
+              }
+            ];
+          });
+        }}
+      />
+    </AnimatedBalao>
+  );
+}
 
-                  />
-                </AnimatedBalao>
-              );
-            }
+
+// e mantenha o botão rápido “📦 Ver Pedido” lá embaixo para, quando clicado,
+// disparar a renderização de item.tipo === 'opcoes-pedido' e mostrar o resumo.
+
             // Opções Reserva
            if (item.tipo === 'opcoes-reserva' && ultimaReserva) {
   return (
@@ -410,12 +428,20 @@ function encontrarComandoSemelhante(input, comandos) {
             onChangeText={setMensagem}
             onSubmitEditing={() => enviarMensagem()}
           />
-          <TouchableOpacity style={styles.botaoEnviar} onPress={() => enviarMensagem()}>
-            <Text style={styles.seta}>➤</Text>
-          </TouchableOpacity>
+          <Pressable
+  onPress={() => enviarMensagem()}
+  android_ripple={{ color: 'transparent' }}
+  style={({ pressed }) => [
+    styles.botaoEnviar,
+    pressed && styles.botaoEnviarPress
+  ]}
+>
+  <Text style={styles.seta}>➤</Text>
+</Pressable>
+
         </View>
 
-<View style={styles.botoesRodape}>
+  <View style={styles.botoesRodape}>
   {[
     { label: '🍽️ Cardápio', onPress: responderCardapio },
     { label: '🕒 Horários', onPress: responderHorario },
@@ -444,7 +470,7 @@ function encontrarComandoSemelhante(input, comandos) {
               de: 'bot',
             },
           ]);
-        setEsperandoConfirmacao('reserva');
+          setEsperandoConfirmacao('reserva');
         }
       },
     },
@@ -477,19 +503,33 @@ function encontrarComandoSemelhante(input, comandos) {
       },
     },
   ].map((btn) => (
-    <TouchableOpacity key={btn.label} style={styles.botaoRodape} onPress={btn.onPress}>
+    <Pressable
+      key={btn.label}
+      onPress={btn.onPress}
+      android_ripple={{ color: 'transparent' }}
+      style={({ pressed }) => [
+        styles.botaoRodape,
+        pressed && styles.botaoRodapePress
+      ]}
+    >
       <Text style={styles.botaoTextoRodape}>{btn.label}</Text>
-    </TouchableOpacity>
+    </Pressable>
   ))}
 </View>
 
-        {/* Acesso Cozinha */}
-        <View style={styles.acessoRodape}>
-          <TouchableOpacity style={styles.botaoRodape} onPress={()=>router.push('/acesso-cozinha')}>
-            <Text style={styles.botaoTextoRodape}>🔒 Acesso Cozinha</Text>
-          </TouchableOpacity>
-        </View>
-
+{/* Acesso Cozinha */}
+<View style={styles.acessoRodape}>
+  <Pressable
+    onPress={() => router.push('/acesso-cozinha')}
+    android_ripple={{ color: 'transparent' }}
+    style={({ pressed }) => [
+      styles.botaoRodape,
+      pressed && styles.botaoRodapePress
+    ]}
+  >
+    <Text style={styles.botaoTextoRodape}>🔒 Acesso Cozinha</Text>
+  </Pressable>
+</View>
       </KeyboardAvoidingView>
     </ImageBackground>
   );
@@ -497,29 +537,172 @@ function encontrarComandoSemelhante(input, comandos) {
 
 // Estilos
 const styles = StyleSheet.create({
-  container:{flex:1,justifyContent:'center',alignItems:'center'},
-  retangulo:{backgroundColor:'#fff',width:'90%',maxWidth:400,aspectRatio:9/16,borderRadius:16,shadowColor:'#000',shadowOpacity:0.2,shadowOffset:{width:0,height:2},shadowRadius:8,elevation:5,overflow:'hidden'},
-  topo:{backgroundColor:'#c0392b',flexDirection:'row',alignItems:'center',paddingHorizontal:16,paddingVertical:10,borderBottomWidth:1,borderColor:'#b03a2e'},
-  centroTopo:{flex:1,alignItems:'center',marginRight:40},
-  titulo:{fontSize:16,fontWeight:'bold',color:'#fff'},
-  logo:{width:40,height:40,resizeMode:'cover',borderRadius:20,borderWidth:2,borderColor:'#fff'},
-  chat:{flex:1,backgroundColor:'#f8f8f8'},
-  balao:{padding:12,marginVertical:5,borderRadius:14,maxWidth:'80%',shadowColor:'#000',shadowOpacity:0.05,shadowOffset:{width:0,height:1},shadowRadius:2,elevation:2},
-  cliente:{backgroundColor:'#3498db',alignSelf:'flex-end'},
-  bot:{backgroundColor:'#fff',alignSelf:'flex-start'},
-  textoCliente:{fontSize:15,color:'#fff',textShadowColor:'rgba(0,0,0,0.2)',textShadowOffset:{width:1,height:1},textShadowRadius:1},
-  textoBot:{fontSize:15,color:'#000',textShadowColor:'rgba(0,0,0,0.1)',textShadowOffset:{width:1,height:1},textShadowRadius:1},
-  envio:{flexDirection:'row',padding:10,borderTopWidth:1,borderColor:'#ddd',backgroundColor:'#fff'},
-  input:{flex:1,borderColor:'#ccc',borderWidth:1,borderRadius:20,paddingHorizontal:12,height:40},
-  botaoEnviar:{justifyContent:'center',alignItems:'center',padding:10,backgroundColor:'#c0392b',borderRadius:20,marginLeft:8},
-  seta:{fontSize:18,color:'#fff',fontWeight:'bold'},
-  botoesRodape:{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',backgroundColor:'#fff',paddingVertical:10,paddingHorizontal:5},
-  botaoRodape:{backgroundColor:'#c0392b',paddingVertical:10,paddingHorizontal:8,margin:6,borderRadius:25,width:'30%',alignItems:'center',justifyContent:'center'},
-  botaoTextoRodape:{fontSize:13,color:'#fff',fontWeight:'600',textAlign:'center',lineHeight:16},
-  acessoRodape:{alignItems:'center',paddingBottom:10,backgroundColor:'#fff'},
-  cancelarBtn:{backgroundColor:'#e74c3c',paddingVertical:8,paddingHorizontal:16,borderRadius:20},
-  cancelarTexto:{color:'#fff',fontWeight:'bold'},
-  alterarBtn:{backgroundColor:'#e67e22',paddingVertical:8,paddingHorizontal:16,borderRadius:20,marginLeft:8},
-  alterarTexto:{color:'#fff',fontWeight:'bold'},
-  opcoesRow:{flexDirection:'row',marginTop:10},
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  retangulo: {
+    backgroundColor: '#fff',
+    width: '90%',
+    maxWidth: 400,
+    aspectRatio: 9 / 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
+  },
+  topo: {
+    backgroundColor: '#c0392b',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: '#b03a2e',
+  },
+  centroTopo: {
+    flex: 1,
+    alignItems: 'center',
+    marginRight: 40,
+  },
+  titulo: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  logo: {
+    width: 40,
+    height: 40,
+    resizeMode: 'cover',
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  chat: {
+    flex: 1,
+    backgroundColor: '#f8f8f8',
+  },
+  balao: {
+    padding: 12,
+    marginVertical: 5,
+    borderRadius: 14,
+    maxWidth: '80%',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  cliente: {
+    backgroundColor: '#3498db',
+    alignSelf: 'flex-end',
+  },
+  bot: {
+    backgroundColor: '#fff',
+    alignSelf: 'flex-start',
+  },
+  textoCliente: {
+    fontSize: 15,
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 1,
+  },
+  textoBot: {
+    fontSize: 15,
+    color: '#000',
+    textShadowColor: 'rgba(0,0,0,0.1)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 1,
+  },
+  envio: {
+    flexDirection: 'row',
+    padding: 10,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  input: {
+    flex: 1,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    height: 40,
+  },
+  botaoEnviar: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 10,
+    backgroundColor: '#c0392b', // vermelho original
+    borderRadius: 20,
+    marginLeft: 8,
+  },
+  seta: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  botoesRodape: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+  },
+  botaoRodape: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    margin: 6,
+    borderRadius: 25,
+    width: '30%',
+    backgroundColor: '#247e9e',   // azul clarinho escolhido
+  },
+  botaoRodapePress: {
+    backgroundColor: '#000094',   // azul escuro ao pressionar
+  },
+  botaoTextoRodape: {
+    fontSize: 13,
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  acessoRodape: {
+    alignItems: 'center',
+    paddingBottom: 10,
+    backgroundColor: '#fff',
+  },
+  cancelarBtn: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  cancelarTexto: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  alterarBtn: {
+    backgroundColor: '#e67e22',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginLeft: 8,
+  },
+  alterarTexto: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  opcoesRow: {
+    flexDirection: 'row',
+    marginTop: 10,
+  },
 });
