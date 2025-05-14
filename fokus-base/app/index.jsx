@@ -37,6 +37,7 @@ const AnimatedBalao = ({ style, children }) => {
 };
 
 export default function Index() {
+  const [esperandoConfirmacao, setEsperandoConfirmacao] = useState(null);
   const [mensagem, setMensagem] = useState('');
   const [conversas, setConversas] = useState([
     { id: '1', texto: '🍽️ Bem-vindo ao Restaurante Poliedro!', de: 'bot' },
@@ -71,6 +72,9 @@ export default function Index() {
     flatListRef.current?.scrollToEnd({ animated: true });
   }, [conversas]);
 
+  
+
+
   // Após os useEffect:
 const salvarReservaGlobal = async (reserva) => {
   const existentes = await AsyncStorage.getItem('todasReservas');
@@ -99,21 +103,48 @@ const salvarPedidoGlobal = async (pedido) => {
   }
 };
 
-  // Funções de envio e respostas
-  const enviarMensagem = texto => {
-    const msg = texto?.trim() || mensagem.trim();
-    if (!msg) return;
-    const cliente = { id: Date.now().toString(), texto: msg, de: 'cliente' };
-    const bot = { id: (Date.now()+1).toString(), texto: 'Mensagem recebida! 🍽️', de: 'bot' };
-    setConversas(prev => [...prev, cliente, bot]);
-    setMensagem('');
-  };
+  const enviarMensagem = (textoDigitado) => {
+  const msg = textoDigitado?.trim().toLowerCase() || mensagem.trim().toLowerCase();
+  if (!msg) return;
 
-  const responderCardapio = () => {
-    const pergunta = { id: Date.now().toString(), texto: 'Quero ver o cardápio!', de: 'cliente' };
-    const resposta = {
-      id: (Date.now()+1).toString(),
-      texto: `🍽️ Nosso Cardápio
+  const cliente = { id: Date.now().toString(), texto: msg, de: 'cliente' };
+  setConversas(prev => [...prev, cliente]);
+
+  if (msg === 'sim' && esperandoConfirmacao === 'reserva') {
+    setEsperandoConfirmacao(null);
+    setConversas(prev => [
+      ...prev,
+      { id: Date.now().toString(), tipo: 'formulario', de: 'bot' },
+    ]);
+    setMensagem('');
+    return;
+  }
+
+  const comandos = Object.keys(comandosReconhecidos);
+  const semelhante = encontrarComandoSemelhante(msg, comandos);
+
+
+  if (semelhante && typeof comandosReconhecidos[semelhante] === 'function') {
+    comandosReconhecidos[semelhante]();
+  } else {
+    const respostaPadrao = {
+      id: (Date.now() + 1).toString(),
+      texto: '😕 Desculpe, meu lorde, não entendi o que você quis dizer. Pode tentar novamente?',
+      de: 'bot',
+    };
+    setConversas(prev => [...prev, respostaPadrao]);
+  }
+
+  setMensagem('');
+};
+
+
+
+const responderCardapio = () => {
+  const pergunta = { id: Date.now().toString(), texto: 'Quero ver o cardápio!', de: 'cliente' };
+  const resposta = {
+    id: (Date.now()+1).toString(),
+    texto: `🍽️ Nosso Cardápio
 
 Pratos Principais
 Filé de Frango Grelhado – R$ 28,99
@@ -127,29 +158,85 @@ Salada com Omelete – R$ 26,99
 Salada com Atum – R$ 26,99
 Salada Caesar – R$ 27,99
 Salada com Kibe Vegano ou Quiche – R$ 31,99`,
-      de: 'bot',
-    };
-    setConversas(prev => [...prev, pergunta, resposta]);
+    de: 'bot',
   };
+  setConversas(prev => [...prev, pergunta, resposta]);
+};
 
-  const responderHorario = () => {
-    const pergunta = { id: Date.now().toString(), texto: 'Quais são os horários?', de: 'cliente' };
-    const horario = {
-      id: (Date.now()+1).toString(),
-      texto: `🕒 Horário
+const responderHorario = () => {
+  const pergunta = { id: Date.now().toString(), texto: 'Quais são os horários?', de: 'cliente' };
+  const horario = {
+    id: (Date.now()+1).toString(),
+    texto: `🕒 Horário
 Funcionamos de terça a domingo
 – Almoço: 11:30 às 15:00
 – Jantar: 19:00 às 23:00`,
-      de: 'bot',
-    };
-    const endereco = {
-      id: (Date.now()+2).toString(),
-      texto: `📍 Rua dos Sabores, 123 – Centro
-📞 (11) 1234-5678`,
-      de: 'bot',
-    };
-    setConversas(prev => [...prev, pergunta, horario, endereco]);
+    de: 'bot',
   };
+  const endereco = {
+    id: (Date.now()+2).toString(),
+    texto: `📍 Rua dos Sabores, 123 – Centro
+📞 (11) 1234-5678`,
+    de: 'bot',
+  };
+  setConversas(prev => [...prev, pergunta, horario, endereco]);
+};
+
+// Agora sim: comandosReconhecidos
+const comandosReconhecidos = {
+  'ver cardapio': responderCardapio,
+  'fazer pedido': () => setConversas(prev => [...prev, { id: Date.now().toString(), tipo: 'pedido', de: 'bot' }]),
+  'ver pedido': () => {
+    if (ultimoPedido) {
+      setConversas(prev => [...prev, { id: Date.now().toString(), tipo: 'opcoes-pedido', de: 'bot' }]);
+    } else {
+      setConversas(prev => [...prev, { id: Date.now().toString(), texto: '📦 Você não tem pedidos ativos. Deseja fazer um?', de: 'bot' }]);
+    }
+  },
+  'ver reserva': () => {
+  if (ultimaReserva) {
+    setConversas(prev => [
+      ...prev,
+      { id: Date.now().toString(), tipo: 'opcoes-reserva', de: 'bot' },
+    ]);
+  } else {
+    setConversas(prev => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        texto: '📋 Você não tem reservas ativas. Deseja fazer uma?',
+        de: 'bot',
+      },
+    ]);
+    setEsperandoConfirmacao('reserva');
+  }
+},
+
+  'horarios': responderHorario,
+  'reservar': () => setConversas(prev => [...prev, { id: Date.now().toString(), tipo: 'formulario', de: 'bot' }]),
+};
+
+function encontrarComandoSemelhante(input, comandos) {
+  input = input.toLowerCase();
+  let melhor = null;
+  let melhorPontuacao = 0;
+
+  for (const comando of comandos) {
+    const palavrasComando = comando.toLowerCase().split(' ');
+    let pontuacao = palavrasComando.reduce((score, palavra) => {
+      return score + (input.includes(palavra.slice(0, 4)) ? 1 : 0);
+    }, 0);
+
+    if (pontuacao > melhorPontuacao) {
+      melhorPontuacao = pontuacao;
+      melhor = comando;
+    }
+  }
+
+  return melhorPontuacao > 0 ? melhor : null;
+}
+
+
 
   return (
     <ImageBackground
@@ -328,8 +415,6 @@ Funcionamos de terça a domingo
           </TouchableOpacity>
         </View>
 
-        {/* Botões rápidos */}
-       {/* Botões rápidos */}
 <View style={styles.botoesRodape}>
   {[
     { label: '🍽️ Cardápio', onPress: responderCardapio },
@@ -359,6 +444,7 @@ Funcionamos de terça a domingo
               de: 'bot',
             },
           ]);
+        setEsperandoConfirmacao('reserva');
         }
       },
     },
