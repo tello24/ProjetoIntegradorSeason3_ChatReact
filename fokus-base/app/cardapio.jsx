@@ -9,7 +9,7 @@ export default function Cardapio() {
   // Função para carregar os pratos da API
   const carregarCardapio = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/cardapio');
+      const response = await axios.get('https://ai4owum-anonymous-8081.exp.direct/cardapio');
       setPratos(response.data); // Atualiza o estado com os pratos do banco
     } catch (error) {
       console.log(error);

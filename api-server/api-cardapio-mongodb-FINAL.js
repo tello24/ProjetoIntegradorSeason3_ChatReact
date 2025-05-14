@@ -50,6 +50,6 @@ app.get('/cardapio', async (req, res) => {
 });
 
 // Inicialização do servidor
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0' ,() => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
 });
