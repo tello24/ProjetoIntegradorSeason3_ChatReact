@@ -66,7 +66,7 @@ export default function PainelCozinha() {
         <View style={styles.topo}>
           <Text style={styles.titulo}>Painel da Cozinha</Text>
           <View style={styles.botoesTopo}>
-            <TouchableOpacity style={styles.botaoTopo} onPress={() => alert('Função em construção, meu lorde!')}>
+            <TouchableOpacity style={styles.botaoTopo} onPress={() => alert('Função em construção, aguarde!')}>
               <Text style={styles.textoBotaoTopo}>Editar Cardápio</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.botaoTopo} onPress={() => router.replace('/')}> 
