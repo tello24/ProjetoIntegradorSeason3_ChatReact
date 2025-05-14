@@ -40,6 +40,7 @@ const AnimatedBalao = ({ style, children }) => {
 };
 
 export default function Index() {
+  const [hovered, setHovered] = useState(null);
   const [esperandoConfirmacao, setEsperandoConfirmacao] = useState(null);
   const [mensagem, setMensagem] = useState('');
   const [conversas, setConversas] = useState([
@@ -132,7 +133,7 @@ const salvarPedidoGlobal = async (pedido) => {
   } else {
     const respostaPadrao = {
       id: (Date.now() + 1).toString(),
-      texto: '😕 Desculpe, meu lorde, não entendi o que você quis dizer. Pode tentar novamente?',
+      texto: 'Desculpe, não entendi o que você quis dizer. Pode tentar novamente?',
       de: 'bot',
     };
     setConversas(prev => [...prev, respostaPadrao]);
@@ -504,16 +505,20 @@ if (item.tipo === 'pedido') {
     },
   ].map((btn) => (
     <Pressable
-      key={btn.label}
-      onPress={btn.onPress}
-      android_ripple={{ color: 'transparent' }}
-      style={({ pressed }) => [
-        styles.botaoRodape,
-        pressed && styles.botaoRodapePress
-      ]}
-    >
-      <Text style={styles.botaoTextoRodape}>{btn.label}</Text>
-    </Pressable>
+  key={btn.label}
+  onPress={btn.onPress}
+  android_ripple={{ color: 'transparent' }}
+  onHoverIn={() => setHovered(btn.label)}
+  onHoverOut={() => setHovered(null)}
+  style={({ pressed }) => [
+    styles.botaoRodape,
+    hovered === btn.label && styles.botaoRodapeHover,
+    pressed && styles.botaoRodapePress
+  ]}
+>
+  <Text style={styles.botaoTextoRodape}>{btn.label}</Text>
+</Pressable>
+
   ))}
 </View>
 
@@ -663,11 +668,15 @@ const styles = StyleSheet.create({
     margin: 6,
     borderRadius: 25,
     width: '30%',
-    backgroundColor: '#247e9e',   // azul clarinho escolhido
+    backgroundColor: '#16C1D7',  
   },
   botaoRodapePress: {
-    backgroundColor: '#000094',   // azul escuro ao pressionar
+    backgroundColor: '#1097A6',
   },
+  botaoRodapeHover: {
+  backgroundColor: '#1097A6', // Azul mais escuro ao passar o mouse
+},
+
   botaoTextoRodape: {
     fontSize: 13,
     color: '#fff',
