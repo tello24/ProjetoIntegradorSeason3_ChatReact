@@ -286,12 +286,10 @@ function encontrarComandoSemelhante(input, comandos) {
         style={styles.retangulo}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.topo}>
-          <Image source={require('./assets/logo.jpg')} style={styles.logo} />
-          <View style={styles.centroTopo}>
-            <Text style={styles.titulo}>Restaurante Poliedro</Text>
-          </View>
-        </View>
+       <View style={styles.topoCurvo}>
+  <Image source={require('./assets/logo.jpg')} style={styles.logo} />
+  <Text style={styles.nomeRestaurante}>Restaurante Poliedro</Text>
+</View>
 
         <FlatList
           ref={flatListRef}
@@ -552,20 +550,6 @@ if (item.tipo === 'pedido') {
 
   ))}
 </View>
-
-{/* Acesso Cozinha */}
-<View style={styles.acessoRodape}>
-  <Pressable
-    onPress={() => router.push('/acesso-cozinha')}
-    android_ripple={{ color: 'transparent' }}
-    style={({ pressed }) => [
-      styles.botaoRodape,
-      pressed && styles.botaoRodapePress
-    ]}
-  >
-    <Text style={styles.botaoTextoRodape}>🔒 Acesso Cozinha</Text>
-  </Pressable>
-</View>
       </KeyboardAvoidingView>
     </ImageBackground>
   );
@@ -581,6 +565,7 @@ const styles = StyleSheet.create({
   retangulo: {
     backgroundColor: '#fff',
     width: '90%',
+    
     maxWidth: 400,
     aspectRatio: 9 / 16,
     borderRadius: 16,
@@ -600,6 +585,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#b03a2e',
   },
+  topoCurvo: {
+  backgroundColor: '#16C1D7',
+  height: 120,
+  borderBottomLeftRadius: 40,
+  borderBottomRightRadius: 40,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginBottom: 10,
+},
+
   centroTopo: {
     flex: 1,
     alignItems: 'center',
@@ -618,6 +613,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#fff',
   },
+  nomeRestaurante: {
+  color: '#fff',
+  fontSize: 18,
+  fontWeight: 'bold',
+  marginTop: 8,
+},
+
   chat: {
     flex: 1,
     backgroundColor: '#f8f8f8',
@@ -694,10 +696,10 @@ const styles = StyleSheet.create({
   botaoRodape: {
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 15,
     paddingHorizontal: 8,
     margin: 6,
-    borderRadius: 25,
+    borderRadius: 20,
     width: '30%',
     backgroundColor: '#16C1D7',  
   },
