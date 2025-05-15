@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   topo: {
-    backgroundColor: '#c0392b',
+    backgroundColor: '#16C1D7',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
