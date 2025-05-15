@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   botaoAcao: {
-    backgroundColor: '#2980b9',
+    backgroundColor: '#2ecc71',
     marginTop: 8,
     padding: 8,
     borderRadius: 6,
