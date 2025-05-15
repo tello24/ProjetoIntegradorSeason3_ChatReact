@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ImageBackground,
   TextInput,
   TouchableOpacity,
   Image,
@@ -12,21 +11,21 @@ import {
   Platform,
   Alert,
   Dimensions,
+  ImageBackground,
 } from 'react-native';
 
 export default function Index() {
-  const [perfil, setPerfil] = useState(null); // null, 'aluno' ou 'restaurante'
+  const [perfil, setPerfil] = useState(null);
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const router = useRouter();
 
-  const { width: screenWidth } = Dimensions.get('window');
-  const isDesktop = screenWidth > 700;
-
   const alunosAutorizados = [
-    { email: 'aluno1@email.com', senha: 'senha123' },
-    { email: 'aluno2@email.com', senha: 'teste456' },
-    { email: 'maria@aluno.com', senha: 'poliedro2024' },
+    { email: 'aluno@p4ed.com', senha: 'teste123' },
+  ];
+
+  const professoresAutorizados = [
+    { email: 'professor@sistemapoliedro.com.br', senha: 'teste123' },
   ];
 
   const entrar = () => {
@@ -37,7 +36,7 @@ export default function Index() {
 
     if (perfil === 'restaurante') {
       if (
-        email.toLowerCase() === 'cozinha@sistemapoliedro.com.br' &&
+        email.toLowerCase() === 'cozinha@gmail.com' &&
         senha === 'teste123'
       ) {
         router.replace('/painel-cozinha');
@@ -50,48 +49,57 @@ export default function Index() {
           a.email.toLowerCase() === email.toLowerCase() &&
           a.senha === senha
       );
-
       if (autorizado) {
         router.replace('/chat-aluno');
       } else {
         Alert.alert('Erro', 'Credenciais de aluno inválidas!');
+      }
+    } else if (perfil === 'professor') {
+      const autorizado = professoresAutorizados.some(
+        (p) =>
+          p.email.toLowerCase() === email.toLowerCase() &&
+          p.senha === senha
+      );
+      if (autorizado) {
+        router.replace('/chat-aluno');
+      } else {
+        Alert.alert('Erro', 'Credenciais de professor inválidas!');
       }
     }
   };
 
   return (
     <ImageBackground
-      source={{
-        uri: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0',
-      }}
+      source={{ uri: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0' }}
       style={styles.container}
       resizeMode="cover"
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={[
-            styles.retangulo,
-
-           ]}
+        style={styles.card}
       >
-        <View style={styles.topo}>
+        <View style={styles.topoCurvo}>
           <Image source={require('./assets/logo.jpg')} style={styles.logo} />
-          <View style={styles.centroTopo}>
-            <Text style={styles.titulo}>Tela Login</Text>
-          </View>
         </View>
 
-        <View style={styles.corpo}>
+        <View style={styles.conteudo}>
           {!perfil ? (
             <>
+              <Text style={styles.titulo}>Entrar como:</Text>
               <TouchableOpacity
-                style={styles.botaoPrincipal}
+                style={[styles.botaoEscolha, { marginTop: 10 }]}
                 onPress={() => setPerfil('aluno')}
               >
                 <Text style={styles.textoBotao}>Aluno</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.botaoPrincipal}
+                style={styles.botaoEscolha}
+                onPress={() => setPerfil('professor')}
+              >
+                <Text style={styles.textoBotao}>Professor</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.botaoEscolha}
                 onPress={() => setPerfil('restaurante')}
               >
                 <Text style={styles.textoBotao}>Restaurante</Text>
@@ -99,6 +107,7 @@ export default function Index() {
             </>
           ) : (
             <>
+              <Text style={styles.titulo}>Login</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Email"
@@ -108,7 +117,6 @@ export default function Index() {
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
-
               <TextInput
                 style={styles.input}
                 placeholder="Senha"
@@ -117,23 +125,15 @@ export default function Index() {
                 onChangeText={setSenha}
                 secureTextEntry
               />
-
-              <TouchableOpacity
-                style={styles.botaoPrincipal}
-                onPress={entrar}
-              >
-                <Text style={styles.textoBotao}>Entrar</Text>
+              <TouchableOpacity style={styles.botaoLogin} onPress={entrar}>
+                <Text style={styles.textoBotaoLogin}>Entrar</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.botaoSecundario}
-                onPress={() => {
-                  setPerfil(null);
-                  setEmail('');
-                  setSenha('');
-                }}
-              >
-                <Text style={styles.textoBotao}>Voltar</Text>
+              <TouchableOpacity style={styles.botaoVoltar} onPress={() => {
+                setPerfil(null);
+                setEmail('');
+                setSenha('');
+              }}>
+                <Text style={styles.textoVoltar}>Voltar</Text>
               </TouchableOpacity>
             </>
           )}
@@ -144,11 +144,16 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  retangulo: {
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  card: {
     backgroundColor: '#fff',
-    width: '90%',
-    aspectRatio: 9 / 16,
+    width: '100%',
+    height: '80%',
+    maxWidth: 400,
     borderRadius: 16,
     shadowColor: '#000',
     shadowOpacity: 0.2,
@@ -157,59 +162,73 @@ const styles = StyleSheet.create({
     elevation: 5,
     overflow: 'hidden',
   },
-  topo: {
+  topoCurvo: {
     backgroundColor: '#16C1D7',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  centroTopo: {
-    flex: 1,
-    alignItems: 'center',
+    height: 140,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
     justifyContent: 'center',
-  },
-  titulo: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
+    alignItems: 'center',
+    marginBottom: 100,
   },
   logo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#fff',
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    backgroundColor: '#fff',
   },
-  corpo: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+  conteudo: {
+    padding: 20,
+  },
+  titulo: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  botaoEscolha: {
+    backgroundColor: '#16C1D7',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  textoBotao: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   input: {
-    borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 10,
+    borderColor: '#ccc',
+    borderRadius: 8,
     padding: 12,
     marginBottom: 12,
     backgroundColor: '#fff',
     color: '#000',
   },
-  botaoPrincipal: {
-    backgroundColor: '#27ae60',
-    padding: 12,
-    borderRadius: 10,
+  botaoLogin: {
+    backgroundColor: '#16C1D7',
+    padding: 14,
+    borderRadius: 8,
     alignItems: 'center',
     marginBottom: 10,
   },
-  botaoSecundario: {
-    backgroundColor: '#c0392b',
-    padding: 12,
-    borderRadius: 10,
+  textoBotaoLogin: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  botaoVoltar: {
+    borderColor: '#6cbac9',
+    borderWidth: 1.5,
+    borderRadius: 8,
+    paddingVertical: 10,
     alignItems: 'center',
   },
-  textoBotao: {
-    color: '#fff',
+  textoVoltar: {
+    color: '#6cbac9',
     fontWeight: 'bold',
   },
 });
