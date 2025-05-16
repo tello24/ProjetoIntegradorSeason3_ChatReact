@@ -10,7 +10,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Dimensions,
   ImageBackground,
 } from 'react-native';
 
@@ -104,6 +103,14 @@ export default function Index() {
               >
                 <Text style={styles.textoBotao}>Restaurante</Text>
               </TouchableOpacity>
+
+              <View style={styles.areaCriarConta}>
+                <TouchableOpacity onPress={() => router.push('/cadastro')}>
+                    <Text style={styles.textoCriarConta}>Criar Conta</Text>
+                  </TouchableOpacity>
+              </View>
+
+
             </>
           ) : (
             <>
@@ -231,4 +238,31 @@ const styles = StyleSheet.create({
     color: '#6cbac9',
     fontWeight: 'bold',
   },
+
+  botaoCriarConta: {
+  marginTop: 8,
+  alignItems: 'center',
+},
+
+textoCriarConta: {
+  color: '#16C1D7',
+  fontWeight: 'bold',
+  fontSize: 14,
+  textDecorationLine: 'underline',
+},
+
+areaCriarConta: {
+  marginTop: 30,
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+textoCriarConta: {
+  color: '#16C1D7',
+  fontWeight: 'bold',
+  fontSize: 14,
+  textDecorationLine: 'underline',
+},
+
+
 });
