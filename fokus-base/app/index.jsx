@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import {
   View,
   Text,
@@ -17,6 +18,10 @@ export default function Index() {
   const [perfil, setPerfil] = useState(null);
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [ra, setRa] = useState('');
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
+
+
   const router = useRouter();
 
   const alunosAutorizados = [
@@ -83,36 +88,35 @@ export default function Index() {
 
         <View style={styles.conteudo}>
           {!perfil ? (
-            <>
-              <Text style={styles.titulo}>Entrar como:</Text>
-              <TouchableOpacity
-                style={[styles.botaoEscolha, { marginTop: 10 }]}
-                onPress={() => setPerfil('aluno')}
-              >
-                <Text style={styles.textoBotao}>Aluno</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.botaoEscolha}
-                onPress={() => setPerfil('professor')}
-              >
-                <Text style={styles.textoBotao}>Professor</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.botaoEscolha}
-                onPress={() => setPerfil('restaurante')}
-              >
-                <Text style={styles.textoBotao}>Restaurante</Text>
-              </TouchableOpacity>
+  <>
+    <Text style={styles.titulo}>Entrar como:</Text>
+    <TouchableOpacity
+      style={[styles.botaoEscolha, { marginTop: 10 }]}
+      onPress={() => setPerfil('aluno')}
+    >
+      <Text style={styles.textoBotao}>Aluno</Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={styles.botaoEscolha}
+      onPress={() => setPerfil('professor')}
+    >
+      <Text style={styles.textoBotao}>Professor</Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={styles.botaoEscolha}
+      onPress={() => setPerfil('restaurante')}
+    >
+      <Text style={styles.textoBotao}>Restaurante</Text>
+    </TouchableOpacity>
 
-              <View style={styles.areaCriarConta}>
-                <TouchableOpacity onPress={() => router.push('/cadastro')}>
-                    <Text style={styles.textoCriarConta}>Criar Conta</Text>
-                  </TouchableOpacity>
-              </View>
+    <View style={styles.areaCriarConta}>
+      <TouchableOpacity onPress={() => router.push('/cadastro')}>
+        <Text style={styles.textoCriarConta}>Criar Conta</Text>
+      </TouchableOpacity>
+    </View>
+  </>
+) : (
 
-
-            </>
-          ) : (
             <>
               <Text style={styles.titulo}>Login</Text>
               <TextInput
@@ -124,14 +128,24 @@ export default function Index() {
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
-              <TextInput
-                style={styles.input}
-                placeholder="Senha"
-                placeholderTextColor="#888"
-                value={senha}
-                onChangeText={setSenha}
-                secureTextEntry
-              />
+              <View style={styles.inputSenhaContainer}>
+  <TextInput
+    style={styles.inputSenha}
+    placeholder="Senha"
+    placeholderTextColor="#888"
+    value={senha}
+    onChangeText={setSenha}
+    secureTextEntry={!senhaVisivel}
+  />
+  <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
+    <Ionicons
+      name={senhaVisivel ? 'eye-off-outline' : 'eye-outline'}
+      size={22}
+      color="#888"
+    />
+  </TouchableOpacity>
+</View>
+
               <TouchableOpacity style={styles.botaoLogin} onPress={entrar}>
                 <Text style={styles.textoBotaoLogin}>Entrar</Text>
               </TouchableOpacity>
@@ -263,6 +277,23 @@ textoCriarConta: {
   fontSize: 14,
   textDecorationLine: 'underline',
 },
+inputSenhaContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  borderWidth: 1,
+  borderColor: '#ccc',
+  borderRadius: 8,
+  paddingHorizontal: 10,
+  marginBottom: 12,
+  backgroundColor: '#fff',
+},
+
+inputSenha: {
+  flex: 1,
+  paddingVertical: 12,
+  color: '#000',
+},
+
 
 
 });
