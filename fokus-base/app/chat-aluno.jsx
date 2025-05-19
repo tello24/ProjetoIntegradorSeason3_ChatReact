@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import {
   StyleSheet,
   Text,
@@ -287,9 +288,16 @@ function encontrarComandoSemelhante(input, comandos) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
        <View style={styles.topoCurvo}>
-  <Image source={require('./assets/logo.jpg')} style={styles.logo} />
-  <Text style={styles.nomeRestaurante}>Restaurante Poliedro</Text>
+  <TouchableOpacity style={styles.logoutBotao} onPress={() => router.replace('/')}>
+    <Ionicons name="log-out-outline" size={24} color="#fff" />
+  </TouchableOpacity>
+
+  <View style={styles.headerCentro}>
+    <Image source={require('./assets/logo.jpg')} style={styles.logo} />
+    <Text style={styles.titulo}>Restaurante Poliedro</Text>
+  </View>
 </View>
+
 
         <FlatList
           ref={flatListRef}
@@ -587,12 +595,25 @@ const styles = StyleSheet.create({
   },
   topoCurvo: {
   backgroundColor: '#16C1D7',
-  height: 120,
+  height: 140,
   borderBottomLeftRadius: 40,
   borderBottomRightRadius: 40,
+  paddingTop: 16,
   justifyContent: 'center',
+  // alignItems: 'center',
+  // marginBottom: 10,
+  position: 'relative'
+},
+logoutBotao: {
+  position: 'absolute',
+  top: 16,
+  right: 16,
+  zIndex: 10,
+},
+
+headerCentro: {
   alignItems: 'center',
-  marginBottom: 10,
+  justifyContent: 'center',
 },
 
   centroTopo: {
@@ -747,4 +768,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 10,
   },
+  logoutIcon: {
+  marginRight: 10,
+  marginLeft: 5,
+},
+
 });
