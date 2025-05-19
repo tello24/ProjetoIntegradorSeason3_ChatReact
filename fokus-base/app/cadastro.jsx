@@ -12,22 +12,20 @@ import {
   ImageBackground,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons'; 
 
 export default function Cadastro() {
+  const [perfil, setPerfil] = useState(null);
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [ra, setRa] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
   const router = useRouter();
 
-  const detectarPerfil = (email) => {
-    if (email.endsWith('@p4ed.com')) return 'aluno';
-    if (email.endsWith('@sistemapoliedro.com.br')) return 'professor';
-    if (email.endsWith('@gmail.com')) return 'restaurante';
-    return null;
-  };
-
   const cadastrarUsuario = () => {
-    if (!email || !senha || !confirmarSenha) {
+    if (!email || !senha || !confirmarSenha || (perfil === 'aluno' && !ra)) {
       Alert.alert('Erro', 'Preencha todos os campos.');
       return;
     }
@@ -37,13 +35,25 @@ export default function Cadastro() {
       return;
     }
 
-    const perfil = detectarPerfil(email);
-    if (!perfil) {
-      Alert.alert('Erro', 'Email inválido. Utilize um email institucional.');
-      return;
+    if (perfil === 'aluno') {
+      if (!email.endsWith('@p4ed.com')) {
+        Alert.alert('Erro', 'Email de aluno deve terminar com @p4ed.com');
+        return;
+      }
+      if (ra.length !== 7 || isNaN(ra)) {
+        Alert.alert('Erro', 'RA deve conter exatamente 7 números.');
+        return;
+      }
     }
 
-    Alert.alert('Cadastro realizado', `Perfil detectado: ${perfil}`);
+    if (perfil === 'professor') {
+      if (!email.endsWith('@sistemapoliedro.com.br')) {
+        Alert.alert('Erro', 'Email de professor deve terminar com @sistemapoliedro.com.br');
+        return;
+      }
+    }
+
+    Alert.alert('Cadastro realizado', `Perfil: ${perfil}`);
     router.replace('/');
   };
 
@@ -63,39 +73,81 @@ export default function Cadastro() {
         </View>
 
         <View style={styles.conteudo}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#888"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Senha"
-            placeholderTextColor="#888"
-            value={senha}
-            onChangeText={setSenha}
-            secureTextEntry
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Confirmar Senha"
-            placeholderTextColor="#888"
-            value={confirmarSenha}
-            onChangeText={setConfirmarSenha}
-            secureTextEntry
-          />
+          {!perfil ? (
+            <>
+              <Text style={styles.label}>Sou:</Text>
+              <TouchableOpacity style={styles.botaoEscolha} onPress={() => setPerfil('aluno')}>
+                <Text style={styles.textoBotao}>Aluno</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.botaoEscolha} onPress={() => setPerfil('professor')}>
+                <Text style={styles.textoBotao}>Professor</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity style={styles.botaoCadastro} onPress={cadastrarUsuario}>
-            <Text style={styles.textoBotao}>Cadastrar</Text>
-          </TouchableOpacity>
+              <TouchableOpacity style={styles.botaoVoltar} onPress={() => router.replace('/')}>
+                <Text style={styles.textoVoltar}>Voltar</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor="#888"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
 
-          <TouchableOpacity style={styles.botaoVoltar} onPress={() => router.back()}>
-            <Text style={styles.textoVoltar}>Voltar</Text>
-          </TouchableOpacity>
+              {perfil === 'aluno' && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="RA do Aluno (7 dígitos)"
+                  placeholderTextColor="#888"
+                  keyboardType="numeric"
+                  maxLength={7}
+                  value={ra}
+                  onChangeText={setRa}
+                />
+              )}
+
+              <View style={styles.senhaContainer}>
+                <TextInput
+                  style={styles.inputSenha}
+                  placeholder="Senha"
+                  placeholderTextColor="#888"
+                  value={senha}
+                  onChangeText={setSenha}
+                  secureTextEntry={!mostrarSenha}
+                />
+                <TouchableOpacity onPress={() => setMostrarSenha(!mostrarSenha)}>
+                  <Ionicons name={mostrarSenha ? 'eye-off' : 'eye'} size={24} color="#888" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.senhaContainer}>
+                <TextInput
+                  style={styles.inputSenha}
+                  placeholder="Confirmar Senha"
+                  placeholderTextColor="#888"
+                  value={confirmarSenha}
+                  onChangeText={setConfirmarSenha}
+                  secureTextEntry={!mostrarConfirmar}
+                />
+                <TouchableOpacity onPress={() => setMostrarConfirmar(!mostrarConfirmar)}>
+                  <Ionicons name={mostrarConfirmar ? 'eye-off' : 'eye'} size={24} color="#888" />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity style={styles.botaoCadastro} onPress={cadastrarUsuario}>
+                <Text style={styles.textoBotao}>Cadastrar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.botaoVoltar} onPress={() => setPerfil(null)}>
+                <Text style={styles.textoVoltar}>Voltar</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </KeyboardAvoidingView>
     </ImageBackground>
@@ -151,6 +203,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     color: '#000',
   },
+  senhaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+  },
+  inputSenha: {
+    flex: 1,
+    height: 48,
+    color: '#000',
+  },
   botaoCadastro: {
     backgroundColor: '#16C1D7',
     padding: 14,
@@ -173,5 +240,19 @@ const styles = StyleSheet.create({
   textoVoltar: {
     color: '#6cbac9',
     fontWeight: 'bold',
+  },
+  label: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 10,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  botaoEscolha: {
+    backgroundColor: '#16C1D7',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
   },
 });
