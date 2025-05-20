@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,59 +17,58 @@ import {
 
 export default function Index() {
   const [perfil, setPerfil] = useState(null);
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [ra, setRa] = useState('');
+  const [email, setEmail] = useState('cozinha@gmail.com');
+  const [senha, setSenha] = useState('teste123');
   const [senhaVisivel, setSenhaVisivel] = useState(false);
-
-
   const router = useRouter();
 
-  const alunosAutorizados = [
-    { email: 'aluno@p4ed.com', senha: 'teste123' },
-  ];
-
-  const professoresAutorizados = [
-    { email: 'professor@sistemapoliedro.com.br', senha: 'teste123' },
-  ];
-
-  const entrar = () => {
+  const entrar = async () => {
     if (!email || !senha) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
 
+    // Verificação extra antes de enviar
+  if (perfil === 'aluno' && !email.endsWith('@p4ed.com')) {
+    Alert.alert('Erro', 'Email de aluno deve terminar com @p4ed.com');
+    return;
+  }
+  if (perfil === 'professor' && !email.endsWith('@sistemapoliedro.com.br')) {
+    Alert.alert('Erro', 'Email de professor deve terminar com @sistemapoliedro.com.br');
+    return;
+  }
+  if (perfil === 'restaurante' && email !== 'cozinha@gmail.com') {
+    Alert.alert('Erro', 'Email errado');
+    return;
+  }
+
+    try {
+      const resposta = await fetch('http://10.2.2.116:3001/login', { // tem q mudar essa 'http://xxxxxxxxxx:3001/cadastro' sempre q o servidor n logar, pode ser q n esteja no msm IP
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
+      });
+
+      const json = await resposta.json();
+
+      if (!resposta.ok) {
+        Alert.alert('Erro', json.erro || 'Falha no login');
+        return;
+      }
+
+      // Roteamento conforme perfil
     if (perfil === 'restaurante') {
-      if (
-        email.toLowerCase() === 'cozinha@gmail.com' &&
-        senha === 'teste123'
-      ) {
-        router.replace('/painel-cozinha');
-      } else {
-        Alert.alert('Erro', 'Credenciais da cozinha inválidas!');
-      }
+      router.replace('/painel-cozinha');
     } else if (perfil === 'aluno') {
-      const autorizado = alunosAutorizados.some(
-        (a) =>
-          a.email.toLowerCase() === email.toLowerCase() &&
-          a.senha === senha
-      );
-      if (autorizado) {
-        router.replace('/chat-aluno');
-      } else {
-        Alert.alert('Erro', 'Credenciais de aluno inválidas!');
-      }
+      await AsyncStorage.setItem('ra', json.ra || '');
+      router.replace('/chat-aluno');
     } else if (perfil === 'professor') {
-      const autorizado = professoresAutorizados.some(
-        (p) =>
-          p.email.toLowerCase() === email.toLowerCase() &&
-          p.senha === senha
-      );
-      if (autorizado) {
-        router.replace('/chat-aluno');
-      } else {
-        Alert.alert('Erro', 'Credenciais de professor inválidas!');
-      }
+      Alert.alert('Área restrita', 'Login de professor ainda não está disponível.');
+    }
+
+    } catch (erro) {
+      console.error('Erro no login:', erro);
+      Alert.alert('Erro', 'Não foi possível conectar com o servidor.');
     }
   };
 
@@ -88,40 +88,39 @@ export default function Index() {
 
         <View style={styles.conteudo}>
           {!perfil ? (
-  <>
-    <Text style={styles.titulo}>Entrar como:</Text>
-    <TouchableOpacity
-      style={[styles.botaoEscolha, { marginTop: 10 }]}
-      onPress={() => setPerfil('aluno')}
-    >
-      <Text style={styles.textoBotao}>Aluno</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={styles.botaoEscolha}
-      onPress={() => setPerfil('professor')}
-    >
-      <Text style={styles.textoBotao}>Professor</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={styles.botaoEscolha}
-      onPress={() => setPerfil('restaurante')}
-    >
-      <Text style={styles.textoBotao}>Restaurante</Text>
-    </TouchableOpacity>
+            <>
+              <Text style={styles.titulo}>Entrar como:</Text>
+              <TouchableOpacity
+                style={[styles.botaoEscolha, { marginTop: 10 }]}
+                onPress={() => setPerfil('aluno')}
+              >
+                <Text style={styles.textoBotao}>Aluno</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.botaoEscolha}
+                onPress={() => setPerfil('professor')}
+              >
+                <Text style={styles.textoBotao}>Professor</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.botaoEscolha}
+                onPress={() => setPerfil('restaurante')}
+              >
+                <Text style={styles.textoBotao}>Restaurante</Text>
+              </TouchableOpacity>
 
-    <View style={styles.areaCriarConta}>
-      <TouchableOpacity onPress={() => router.push('/cadastro')}>
-        <Text style={styles.textoCriarConta}>Criar Conta</Text>
-      </TouchableOpacity>
-    </View>
-  </>
-) : (
-
+              <View style={styles.areaCriarConta}>
+                <TouchableOpacity onPress={() => router.push('/cadastro')}>
+                  <Text style={styles.textoCriarConta}>Criar Conta</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
             <>
               <Text style={styles.titulo}>Login</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder={perfil === 'aluno' ? 'Email@p4ed.com' : "Email"}
                 placeholderTextColor="#888"
                 value={email}
                 onChangeText={setEmail}
@@ -129,31 +128,34 @@ export default function Index() {
                 autoCapitalize="none"
               />
               <View style={styles.inputSenhaContainer}>
-  <TextInput
-    style={styles.inputSenha}
-    placeholder="Senha"
-    placeholderTextColor="#888"
-    value={senha}
-    onChangeText={setSenha}
-    secureTextEntry={!senhaVisivel}
-  />
-  <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
-    <Ionicons
-      name={senhaVisivel ? 'eye-off-outline' : 'eye-outline'}
-      size={22}
-      color="#888"
-    />
-  </TouchableOpacity>
-</View>
+                <TextInput
+                  style={styles.inputSenha}
+                  placeholder="Senha"
+                  placeholderTextColor="#888"
+                  value={senha}
+                  onChangeText={setSenha}
+                  secureTextEntry={!senhaVisivel}
+                />
+                <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
+                  <Ionicons
+                    name={senhaVisivel ? 'eye-off-outline' : 'eye-outline'}
+                    size={22}
+                    color="#888"
+                  />
+                </TouchableOpacity>
+              </View>
 
               <TouchableOpacity style={styles.botaoLogin} onPress={entrar}>
                 <Text style={styles.textoBotaoLogin}>Entrar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.botaoVoltar} onPress={() => {
-                setPerfil(null);
-                setEmail('');
-                setSenha('');
-              }}>
+              <TouchableOpacity
+                style={styles.botaoVoltar}
+                onPress={() => {
+                  setPerfil(null);
+                  setEmail('');
+                  setSenha('');
+                }}
+              >
                 <Text style={styles.textoVoltar}>Voltar</Text>
               </TouchableOpacity>
             </>
@@ -252,48 +254,30 @@ const styles = StyleSheet.create({
     color: '#6cbac9',
     fontWeight: 'bold',
   },
-
-  botaoCriarConta: {
-  marginTop: 8,
-  alignItems: 'center',
-},
-
-textoCriarConta: {
-  color: '#16C1D7',
-  fontWeight: 'bold',
-  fontSize: 14,
-  textDecorationLine: 'underline',
-},
-
-areaCriarConta: {
-  marginTop: 30,
-  alignItems: 'center',
-  justifyContent: 'center',
-},
-
-textoCriarConta: {
-  color: '#16C1D7',
-  fontWeight: 'bold',
-  fontSize: 14,
-  textDecorationLine: 'underline',
-},
-inputSenhaContainer: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  borderWidth: 1,
-  borderColor: '#ccc',
-  borderRadius: 8,
-  paddingHorizontal: 10,
-  marginBottom: 12,
-  backgroundColor: '#fff',
-},
-
-inputSenha: {
-  flex: 1,
-  paddingVertical: 12,
-  color: '#000',
-},
-
-
-
+  areaCriarConta: {
+    marginTop: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textoCriarConta: {
+    color: '#16C1D7',
+    fontWeight: 'bold',
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  inputSenhaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+  },
+  inputSenha: {
+    flex: 1,
+    paddingVertical: 12,
+    color: '#000',
+  },
 });
