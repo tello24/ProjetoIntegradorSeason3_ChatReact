@@ -55,6 +55,24 @@ export default function PainelCozinha() {
   }
 };
 
+const excluirReserva = async (index) => {
+  const atualizadas = reservas.filter((_, i) => i !== index);
+  setReservas(atualizadas);
+  await AsyncStorage.setItem('todasReservas', JSON.stringify(atualizadas));
+
+  // Se for a reserva exibida no chat, remove também
+  const ultima = await AsyncStorage.getItem('ultimaReserva');
+  if (ultima) {
+    const reservaExcluida = reservas[index];
+    const reservaSalva = JSON.parse(ultima);
+    if (
+      reservaExcluida?.nome === reservaSalva?.nome &&
+      reservaExcluida?.data === reservaSalva?.data
+    ) {
+      await AsyncStorage.removeItem('ultimaReserva');
+    }
+  }
+};
 
   return (
     <ImageBackground
@@ -78,12 +96,20 @@ export default function PainelCozinha() {
         <ScrollView contentContainerStyle={styles.conteudo}>
           <Text style={styles.subtitulo}>📋 Reservas</Text>
           {reservas.map((res, index) => (
-            <View key={index} style={styles.card}>
-              <Text>👤 {res.nome}</Text>
-              <Text>📅 {res.data} às {res.horario}</Text>
-              <Text>👥 {res.pessoas} pessoa(s)</Text>
-            </View>
-          ))}
+  <View key={index} style={styles.card}>
+    <Text>👤 {res.nome}</Text>
+    <Text>📅 {res.data} às {res.horario}</Text>
+    <Text>👥 {res.pessoas} pessoa(s)</Text>
+
+    <TouchableOpacity
+      style={[styles.botaoAcao, { backgroundColor: '#e74c3c' }]}
+      onPress={() => excluirReserva(index)}
+    >
+      <Text style={styles.botaoTexto}>❌ Excluir</Text>
+    </TouchableOpacity>
+  </View>
+))}
+
 
           <Text style={styles.subtitulo}>🛒 Pedidos</Text>
           {pedidos.map((ped, index) => (
