@@ -18,57 +18,44 @@ export default function Index() {
   const [perfil, setPerfil] = useState(null);
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [ra, setRa] = useState('');
   const [senhaVisivel, setSenhaVisivel] = useState(false);
-
 
   const router = useRouter();
 
-  const alunosAutorizados = [
-    { email: 'aluno@p4ed.com', senha: 'teste123' },
-  ];
-
-  const professoresAutorizados = [
-    { email: 'professor@sistemapoliedro.com.br', senha: 'teste123' },
-  ];
-
-  const entrar = () => {
+  const entrar = async () => {
     if (!email || !senha) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
 
-    if (perfil === 'restaurante') {
-      if (
-        email.toLowerCase() === 'cozinha@gmail.com' &&
-        senha === 'teste123'
-      ) {
+    try {
+      const resposta = await fetch('http://localhost:3001/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        Alert.alert('Erro', dados.mensagem || 'Erro no login');
+        return;
+      }
+
+      // Redirecionamento com base no perfil
+      if (dados.perfil === 'aluno') {
+        router.replace('/chat-aluno');
+      } else if (dados.perfil === 'professor') {
+        router.replace('/chat-aluno'); // Ajuste aqui se tiver outra rota
+      } else if (dados.perfil === 'restaurante') {
         router.replace('/painel-cozinha');
       } else {
-        Alert.alert('Erro', 'Credenciais da cozinha inválidas!');
+        Alert.alert('Erro', 'Perfil desconhecido');
       }
-    } else if (perfil === 'aluno') {
-      const autorizado = alunosAutorizados.some(
-        (a) =>
-          a.email.toLowerCase() === email.toLowerCase() &&
-          a.senha === senha
-      );
-      if (autorizado) {
-        router.replace('/chat-aluno');
-      } else {
-        Alert.alert('Erro', 'Credenciais de aluno inválidas!');
-      }
-    } else if (perfil === 'professor') {
-      const autorizado = professoresAutorizados.some(
-        (p) =>
-          p.email.toLowerCase() === email.toLowerCase() &&
-          p.senha === senha
-      );
-      if (autorizado) {
-        router.replace('/chat-aluno');
-      } else {
-        Alert.alert('Erro', 'Credenciais de professor inválidas!');
-      }
+
+    } catch (erro) {
+      console.error(erro);
+      Alert.alert('Erro', 'Erro ao conectar com o servidor');
     }
   };
 
@@ -88,35 +75,34 @@ export default function Index() {
 
         <View style={styles.conteudo}>
           {!perfil ? (
-  <>
-    <Text style={styles.titulo}>Entrar como:</Text>
-    <TouchableOpacity
-      style={[styles.botaoEscolha, { marginTop: 10 }]}
-      onPress={() => setPerfil('aluno')}
-    >
-      <Text style={styles.textoBotao}>Aluno</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={styles.botaoEscolha}
-      onPress={() => setPerfil('professor')}
-    >
-      <Text style={styles.textoBotao}>Professor</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={styles.botaoEscolha}
-      onPress={() => setPerfil('restaurante')}
-    >
-      <Text style={styles.textoBotao}>Restaurante</Text>
-    </TouchableOpacity>
+            <>
+              <Text style={styles.titulo}>Entrar como:</Text>
+              <TouchableOpacity
+                style={[styles.botaoEscolha, { marginTop: 10 }]}
+                onPress={() => setPerfil('aluno')}
+              >
+                <Text style={styles.textoBotao}>Aluno</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.botaoEscolha}
+                onPress={() => setPerfil('professor')}
+              >
+                <Text style={styles.textoBotao}>Professor</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.botaoEscolha}
+                onPress={() => setPerfil('restaurante')}
+              >
+                <Text style={styles.textoBotao}>Restaurante</Text>
+              </TouchableOpacity>
 
-    <View style={styles.areaCriarConta}>
-      <TouchableOpacity onPress={() => router.push('/cadastro')}>
-        <Text style={styles.textoCriarConta}>Criar Conta</Text>
-      </TouchableOpacity>
-    </View>
-  </>
-) : (
-
+              <View style={styles.areaCriarConta}>
+                <TouchableOpacity onPress={() => router.push('/cadastro')}>
+                  <Text style={styles.textoCriarConta}>Criar Conta</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
             <>
               <Text style={styles.titulo}>Login</Text>
               <TextInput
@@ -129,31 +115,34 @@ export default function Index() {
                 autoCapitalize="none"
               />
               <View style={styles.inputSenhaContainer}>
-  <TextInput
-    style={styles.inputSenha}
-    placeholder="Senha"
-    placeholderTextColor="#888"
-    value={senha}
-    onChangeText={setSenha}
-    secureTextEntry={!senhaVisivel}
-  />
-  <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
-    <Ionicons
-      name={senhaVisivel ? 'eye-off-outline' : 'eye-outline'}
-      size={22}
-      color="#888"
-    />
-  </TouchableOpacity>
-</View>
+                <TextInput
+                  style={styles.inputSenha}
+                  placeholder="Senha"
+                  placeholderTextColor="#888"
+                  value={senha}
+                  onChangeText={setSenha}
+                  secureTextEntry={!senhaVisivel}
+                />
+                <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
+                  <Ionicons
+                    name={senhaVisivel ? 'eye-off-outline' : 'eye-outline'}
+                    size={22}
+                    color="#888"
+                  />
+                </TouchableOpacity>
+              </View>
 
               <TouchableOpacity style={styles.botaoLogin} onPress={entrar}>
                 <Text style={styles.textoBotaoLogin}>Entrar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.botaoVoltar} onPress={() => {
-                setPerfil(null);
-                setEmail('');
-                setSenha('');
-              }}>
+              <TouchableOpacity
+                style={styles.botaoVoltar}
+                onPress={() => {
+                  setPerfil(null);
+                  setEmail('');
+                  setSenha('');
+                }}
+              >
                 <Text style={styles.textoVoltar}>Voltar</Text>
               </TouchableOpacity>
             </>
@@ -229,6 +218,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     color: '#000',
   },
+  inputSenhaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+  },
+  inputSenha: {
+    flex: 1,
+    paddingVertical: 12,
+    color: '#000',
+  },
   botaoLogin: {
     backgroundColor: '#16C1D7',
     padding: 14,
@@ -252,48 +256,15 @@ const styles = StyleSheet.create({
     color: '#6cbac9',
     fontWeight: 'bold',
   },
-
-  botaoCriarConta: {
-  marginTop: 8,
-  alignItems: 'center',
-},
-
-textoCriarConta: {
-  color: '#16C1D7',
-  fontWeight: 'bold',
-  fontSize: 14,
-  textDecorationLine: 'underline',
-},
-
-areaCriarConta: {
-  marginTop: 30,
-  alignItems: 'center',
-  justifyContent: 'center',
-},
-
-textoCriarConta: {
-  color: '#16C1D7',
-  fontWeight: 'bold',
-  fontSize: 14,
-  textDecorationLine: 'underline',
-},
-inputSenhaContainer: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  borderWidth: 1,
-  borderColor: '#ccc',
-  borderRadius: 8,
-  paddingHorizontal: 10,
-  marginBottom: 12,
-  backgroundColor: '#fff',
-},
-
-inputSenha: {
-  flex: 1,
-  paddingVertical: 12,
-  color: '#000',
-},
-
-
-
+  areaCriarConta: {
+    marginTop: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textoCriarConta: {
+    color: '#16C1D7',
+    fontWeight: 'bold',
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
 });
