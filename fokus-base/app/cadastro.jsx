@@ -24,38 +24,58 @@ export default function Cadastro() {
   const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
   const router = useRouter();
 
-  const cadastrarUsuario = () => {
-    if (!email || !senha || !confirmarSenha || (perfil === 'aluno' && !ra)) {
-      Alert.alert('Erro', 'Preencha todos os campos.');
+  const cadastrarUsuario = async () => {
+  if (!email || !senha || !confirmarSenha || (perfil === 'aluno' && !ra)) {
+    Alert.alert('Erro', 'Preencha todos os campos.');
+    return;
+  }
+
+  if (senha !== confirmarSenha) {
+    Alert.alert('Erro', 'As senhas não coincidem.');
+    return;
+  }
+
+  if (perfil === 'aluno') {
+    if (!email.endsWith('@p4ed.com')) {
+      Alert.alert('Erro', 'Email de aluno deve terminar com @p4ed.com');
+      return;
+    }
+    if (ra.length !== 7 || isNaN(ra)) {
+      Alert.alert('Erro', 'RA deve conter exatamente 7 números.');
+      return;
+    }
+  }
+
+  if (perfil === 'professor') {
+    if (!email.endsWith('@sistemapoliedro.com.br')) {
+      Alert.alert('Erro', 'Email de professor deve terminar com @sistemapoliedro.com.br');
+      return;
+    }
+  }
+
+  try {
+    const response = await fetch('http://localhost:3001/cadastro', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, senha }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      Alert.alert('Erro ao cadastrar', data.erro || 'Tente novamente mais tarde');
       return;
     }
 
-    if (senha !== confirmarSenha) {
-      Alert.alert('Erro', 'As senhas não coincidem.');
-      return;
-    }
-
-    if (perfil === 'aluno') {
-      if (!email.endsWith('@p4ed.com')) {
-        Alert.alert('Erro', 'Email de aluno deve terminar com @p4ed.com');
-        return;
-      }
-      if (ra.length !== 7 || isNaN(ra)) {
-        Alert.alert('Erro', 'RA deve conter exatamente 7 números.');
-        return;
-      }
-    }
-
-    if (perfil === 'professor') {
-      if (!email.endsWith('@sistemapoliedro.com.br')) {
-        Alert.alert('Erro', 'Email de professor deve terminar com @sistemapoliedro.com.br');
-        return;
-      }
-    }
-
-    Alert.alert('Cadastro realizado', `Perfil: ${perfil}`);
+    Alert.alert('Sucesso', data.mensagem);
     router.replace('/');
-  };
+  } catch (error) {
+    console.error('Erro:', error);
+    Alert.alert('Erro', 'Erro ao se conectar com o servidor.');
+  }
+};
 
   return (
     <ImageBackground
