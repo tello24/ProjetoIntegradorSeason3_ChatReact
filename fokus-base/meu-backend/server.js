@@ -30,25 +30,19 @@ const usuarioSchema = new mongoose.Schema({
 const Usuario = mongoose.model("Usuario", usuarioSchema);
 
 // Rota de Login
-app.post("/login", async (req, res) => {
-  const { email, senha } = req.body;
+app.post("/login", async(req, res) => {
+  const { email, senha } = req.body
 
-  const usuarioExiste = await Usuario.findOne({ email });
-  if (!usuarioExiste) {
-    return res.status(401).json({ mensagem: "Email inválido!" });
+  const usuarioExiste = await Usuario.findOne({ email })
+  if(!usuarioExiste) {
+    return res.status(401).json({ mensagem: "Email inválido!" })
   }
 
-  const senhaValida = await bcrypt.compare(senha, usuarioExiste.senha);
-  if (!senhaValida) {
-    return res.status(401).json({ mensagem: "Senha inválida!" });
+  const senhaValida = await bcrypt.compare(senha, usuarioExiste.senha)
+  if(!senhaValida) {
+    return res.status(401).json({ mensagem: "Senha inválida!" })
   }
-
-  return res.status(200).json({
-    mensagem: "Login realizado com sucesso",
-    perfil: usuarioExiste.perfil,
-  });
-});
-
+})
 
 // Rota de cadastro
 app.post("/cadastro", async (req, res) => {
