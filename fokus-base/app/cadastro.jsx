@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { ScrollView } from 'react-native';
+
 import {
   View,
   Text,
@@ -24,45 +26,61 @@ export default function Cadastro() {
   const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
   const router = useRouter();
 
-  const cadastrarUsuario = () => {
-    if (!email || !senha || !confirmarSenha || (perfil === 'aluno' && !ra)) {
-      Alert.alert('Erro', 'Preencha todos os campos.');
-      return;
-    }
+  const cadastrarUsuario = async () => {
+  console.log('🟡 Início da função');
 
-    if (senha !== confirmarSenha) {
-      Alert.alert('Erro', 'As senhas não coincidem.');
-      return;
-    }
+  if (!email || !senha || !confirmarSenha) {
+    Alert.alert('Erro', 'Preencha todos os campos.');
+    return;
+  }
 
-    if (perfil === 'aluno') {
-      if (!email.endsWith('@p4ed.com')) {
-        Alert.alert('Erro', 'Email de aluno deve terminar com @p4ed.com');
-        return;
-      }
-      if (ra.length !== 7 || isNaN(ra)) {
-        Alert.alert('Erro', 'RA deve conter exatamente 7 números.');
-        return;
-      }
-    }
+  if (senha !== confirmarSenha) {
+    Alert.alert('Erro', 'Senhas diferentes');
+    return;
+  }
 
-    if (perfil === 'professor') {
-      if (!email.endsWith('@sistemapoliedro.com.br')) {
-        Alert.alert('Erro', 'Email de professor deve terminar com @sistemapoliedro.com.br');
-        return;
-      }
-    }
-
-    Alert.alert('Cadastro realizado', `Perfil: ${perfil}`);
-    router.replace('/');
+  const dados = {
+    email,
+    senha,
+    ...(perfil === 'aluno' && ra ? { ra } : {}),
   };
+
+  console.log('📤 Dados a enviar:', dados);
+
+  try {
+    const resposta = await fetch('http://10.2.2.116:3001/cadastro', { // tem q mudar essa 'http://xxxxxxxxxx:3001/cadastro' sempre q o servidor n logar, pode ser q n esteja no msm IP
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados),
+    });
+
+    console.log('📥 Status HTTP:', resposta.status);
+
+    const json = await resposta.json();
+    console.log('📨 JSON:', json);
+
+    if (!resposta.ok) {
+      Alert.alert('Erro', json.erro || 'Erro ao cadastrar');
+      return;
+    }
+
+    Alert.alert('Sucesso', 'Conta criada com sucesso!');
+    router.replace('/chat-aluno');
+  } catch (erro) {
+    console.error('❌ Erro no cadastro:', erro);
+    Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+  }
+};
+
+
 
   return (
     <ImageBackground
-      source={{ uri: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0' }}
-      style={styles.container}
-      resizeMode="cover"
-    >
+  source={{ uri: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0' }}
+  style={styles.container}
+  resizeMode="cover"
+  pointerEvents="box-none"
+>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.card}
@@ -89,9 +107,9 @@ export default function Cadastro() {
             </>
           ) : (
             <>
-              <TextInput
+              <TextInput 
                 style={styles.input}
-                placeholder="Email"
+                placeholder={perfil === 'aluno' ? 'Email@p4ed.com' : 'Email'}
                 placeholderTextColor="#888"
                 value={email}
                 onChangeText={setEmail}
