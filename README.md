@@ -29,6 +29,7 @@ O projeto faz parte do **Projeto Integrador - Season 3**, com o objetivo de faci
 git clone https://github.com/tello24/ProjetoIntegradorSeason3_ChatReact
 cd ProjetoIntegradorSeason3_ChatBotReact/fokus-base
 npm install
+npm install mongoose cors bcrypt
 ```
 
 ---
@@ -38,11 +39,11 @@ npm install
 ```bash
 TERMINAL 1:
 cd fokus_base
-ngrok http 3001
+node server.js
 
 TERMINAL 2:
 cd fokus_base
-node server.js
+node criarRestaurante.js
 
 TERMINAL 3:
 cd fokus_base
@@ -56,7 +57,8 @@ Abra o app no Expo Go (Android/iOS) escaneando o QR Code exibido no terminal ou 
 
 ## 🛠️ Solução de Problemas
 
-Nada a declarar até o momento. Tudo está funcionando perfeitamente, meu lorde!
+- - SE O SERVER NÃO INICIAR - - 
+npm install mongoose cors bcrypt
 
 ---
 
