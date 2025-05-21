@@ -135,55 +135,62 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
       />
 
       {/* Pergunta sobre bebida opcional no final */}
-      <Text style={styles.label}>Deseja adicionar bebida?</Text>
       <View style={styles.opcoesLinha}>
-        <TouchableOpacity
-          style={[styles.opcaoBotao, querBebida && styles.opcaoSelecionada]}
-          onPress={() => setQuerBebida(true)}
-        >
-          <Text
-            style={[
-              styles.opcaoTexto,
-              querBebida && styles.opcaoTextoSelecionado,
-            ]}
-          >
-            Sim
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.opcaoBotao, !querBebida && styles.opcaoSelecionada]}
-          onPress={() => setQuerBebida(false)}
-        >
-          <Text
-            style={[
-              styles.opcaoTexto,
-              !querBebida && styles.opcaoTextoSelecionado,
-            ]}
-          >
-            Não
-          </Text>
-        </TouchableOpacity>
-      </View>
+  <TouchableOpacity
+    style={[
+      styles.opcaoBotao,
+      querBebida && styles.verdeSelecionado,
+    ]}
+    onPress={() => setQuerBebida(true)}
+  >
+    <Text
+      style={[
+        styles.opcaoTexto,
+        querBebida && styles.textoSelecionadoClaro,
+      ]}
+    >
+      Sim
+    </Text>
+  </TouchableOpacity>
+  <TouchableOpacity
+    style={[
+      styles.opcaoBotao,
+      !querBebida && styles.vermelhoSelecionado,
+    ]}
+    onPress={() => setQuerBebida(false)}
+  >
+    <Text
+      style={[
+        styles.opcaoTexto,
+        !querBebida && styles.textoSelecionadoClaro,
+      ]}
+    >
+      Não
+    </Text>
+  </TouchableOpacity>
+</View>
+
 
       {querBebida && (
         <View style={styles.opcoesLinha}>
-          {opcoesBebida.map((b) => (
-            <TouchableOpacity
-              key={b}
-              style={[styles.opcaoBotao, bebida === b && styles.opcaoSelecionada]}
-              onPress={() => setBebida(b)}
-            >
-              <Text
-                style={[
-                  styles.opcaoTexto,
-                  bebida === b && styles.opcaoTextoSelecionado,
-                ]}
-              >
-                {b}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+  {opcoesBebida.map((b) => (
+    <TouchableOpacity
+      key={b}
+      style={[styles.opcaoBotao, bebida === b && styles.pretoSelecionado]}
+      onPress={() => setBebida(b)}
+    >
+      <Text
+        style={[
+          styles.opcaoTexto,
+          bebida === b && styles.textoSelecionadoClaro,
+        ]}
+      >
+        {b}
+      </Text>
+    </TouchableOpacity>
+  ))}
+</View>
+
       )}
 
       <TouchableOpacity onPress={confirmar} style={styles.botaoConfirmar}>
@@ -242,6 +249,20 @@ const styles = StyleSheet.create({
   opcaoSelecionada: {
     backgroundColor: '#c0392b',
   },
+  verdeSelecionado: {
+  backgroundColor: '#27ae60',
+},
+vermelhoSelecionado: {
+  backgroundColor: '#e74c3c',
+},
+textoSelecionadoClaro: {
+  color: '#fff',
+  fontWeight: 'bold',
+},
+pretoSelecionado: {
+  backgroundColor: '#A9A9A9'
+},
+
   opcaoTexto: {
     color: '#000',
     fontWeight: 'bold',
