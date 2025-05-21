@@ -41,6 +41,18 @@ export default function EditarCardapio() {
     );
   };
 
+  const removerUltimoItem = (catId) => {
+    setCategorias((prev) =>
+      prev.map((cat) => {
+        if (cat.id === catId && cat.itens.length > 1) {
+          const novosItens = cat.itens.slice(0, -1);
+          return { ...cat, itens: novosItens };
+        }
+        return cat;
+      })
+    );
+  };
+
   const atualizarItem = (catId, index, campo, valor) => {
     setCategorias((prev) =>
       prev.map((cat) => {
@@ -84,7 +96,7 @@ export default function EditarCardapio() {
               <Text style={styles.botaoTexto}>Voltar Painel</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.replace('/')} style={styles.botaoTopo}>
-              <Text style={styles.botaoTexto}>Voltar Chat</Text>
+              <Text style={styles.botaoTexto}>Logout</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -118,9 +130,14 @@ export default function EditarCardapio() {
                   />
                 </View>
               ))}
-              <TouchableOpacity onPress={() => adicionarItem(cat.id)} style={styles.adicionarItem}>
-                <Text style={styles.adicionarTexto}>+ Item</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity onPress={() => adicionarItem(cat.id)} style={styles.adicionarItem}>
+                  <Text style={styles.adicionarTexto}>+ Item</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => removerUltimoItem(cat.id)} style={[styles.adicionarItem, { backgroundColor: '#e67e22' }]}>
+                  <Text style={styles.adicionarTexto}>- Item</Text>
+                </TouchableOpacity>
+              </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <TouchableOpacity onPress={() => excluirCategoria(cat.id)} style={styles.excluirCategoria}>
                   <Text style={styles.cancelarTexto}>Excluir Categoria</Text>
@@ -157,7 +174,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   topo: {
-    backgroundColor: '#c0392b',
+    backgroundColor: '#16C1D7',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -180,7 +197,7 @@ const styles = StyleSheet.create({
   salvarBtn: { backgroundColor: '#3498db', padding: 8, borderRadius: 8 },
   salvarTexto: { color: '#fff', fontWeight: 'bold' },
   adicionarCategoria: {
-    backgroundColor: '#8e44ad',
+    backgroundColor: '#7A9FBF',
     paddingVertical: 12,
     borderRadius: 25,
     alignItems: 'center',
