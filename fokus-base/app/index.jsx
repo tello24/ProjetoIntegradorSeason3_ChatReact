@@ -43,28 +43,32 @@ export default function Index() {
   }
 
     try {
-      const resposta = await fetch('http://192.168.0.66:3001/login', { // tem q mudar essa 'http://xxxxxxxxxx:3001/cadastro' sempre q o servidor n logar, pode ser q n esteja no msm IP
+      const resposta = await fetch('http://10.2.2.129:3001/login', { // tem q mudar essa 'http://xxxxxxxxxx:3001/cadastro' sempre q o servidor n logar, pode ser q n esteja no msm IP
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, senha }),
       });
 
       const json = await resposta.json();
+      console.log('🔵 Resposta do backend:', json);
 
       if (!resposta.ok) {
         Alert.alert('Erro', json.erro || 'Falha no login');
         return;
       }
 
-      // Roteamento conforme perfil
-    if (perfil === 'restaurante') {
-      router.replace('/painel-cozinha');
-    } else if (perfil === 'aluno') {
-      await AsyncStorage.setItem('ra', json.ra || '');
-      router.replace('/chat-aluno');
-    } else if (perfil === 'professor') {
-      Alert.alert('Área restrita', 'Login de professor ainda não está disponível.');
-    }
+      // Roteamento conforme perfil vindo do backend
+if (json.perfil === 'restaurante') {
+  router.replace('/painel-cozinha');
+} else if (json.perfil === 'aluno') {
+  await AsyncStorage.setItem('ra', json.ra || '');
+  router.replace('/chat-aluno');
+} else if (json.perfil === 'professor') {
+  Alert.alert('Área restrita', 'Login de professor ainda não está disponível.');
+} else {
+  Alert.alert('Erro', 'Perfil não reconhecido.');
+}
+
 
     } catch (erro) {
       console.error('Erro no login:', erro);
