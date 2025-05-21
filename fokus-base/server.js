@@ -92,6 +92,13 @@ app.post('/cadastro', async (req, res) => {
 // Login
 app.post('/login', async (req, res) => {
   const { email, senha } = req.body;
+
+  // Acesso hardcoded do restaurante
+  if (email === 'cozinha@gmail.com' && senha === 'teste123') {
+    return res.json({ perfil: 'restaurante' });
+  }
+
+  // Acesso normal para alunos/professores
   const user = await Usuario.findOne({ email });
   if (!user) return res.status(404).json({ erro: 'Usuário não encontrado' });
 
@@ -100,6 +107,7 @@ app.post('/login', async (req, res) => {
 
   res.json({ perfil: user.perfil, ra: user.ra });
 });
+
 
 // Salvar pedido
 app.post('/pedido', async (req, res) => {
