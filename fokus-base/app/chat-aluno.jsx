@@ -335,16 +335,36 @@ if (item.tipo === 'pedido') {
           setUltimoPedido(pedido);
           salvarPedidoGlobal(pedido);
           setConversas(prev => {
-            const semForm = prev.filter(i => i.tipo !== 'pedido');
-            return [
-              ...semForm,
-              { 
-                id: (Date.now() + 1).toString(), 
-                texto: '✅ Pedido realizado com sucesso!', 
-                de: 'bot' 
-              }
-            ];
-          });
+  const semForm = prev.filter(i => i.tipo !== 'pedido');
+
+  // Calcula o preço baseado no item e bebida
+  const precos = {
+    'Filé de Frango Grelhado': 28.99,
+    'Linguiça Toscana Grelhada': 28.99,
+    'Linguiça Calabresa Acebolada': 28.99,
+    'Nuggets de Frango': 28.99,
+    'Salada com Filé de Frango': 26.99,
+    'Salada com Omelete': 26.99,
+    'Salada com Atum': 26.99,
+    'Salada Caesar': 27.99,
+    'Salada com Kibe Vegano ou Quiche': 31.99
+  };
+  const precoItem = precos[pedido.item] || 0;
+  const precoBebida = pedido.bebida ? 5 : 0;
+  const total = pedido.quantidade * precoItem + precoBebida;
+
+  const resumo = `✅ Pedido realizado com sucesso!\n\n🍽️ ${pedido.item} (x${pedido.quantidade})\n🥤 Bebida: ${pedido.bebida || 'Nenhuma'}\n💬 Obs: ${pedido.obs || 'Nenhuma'}\n\n💰 Total: R$ ${total.toFixed(2)}`;
+
+  return [
+    ...semForm,
+    { 
+      id: (Date.now() + 1).toString(), 
+      texto: resumo,
+      de: 'bot' 
+    }
+  ];
+});
+
         }}
       />
     </AnimatedBalao>
