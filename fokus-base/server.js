@@ -9,143 +9,144 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect('mongodb+srv://chatbotuser:sistemapoliedro@cluster0.llu10u4.mongodb.net/test?retryWrites=true&w=majority')
+// Conexão com MongoDB
+mongoose.connect('mongodb+srv://chatbotuser:sistemapoliedro@cluster0.llu10u4.mongodb.net/chatbot-db?retryWrites=true&w=majority')
   .then(() => console.log('🔗 Conectado ao MongoDB'))
   .catch(err => console.error('Erro ao conectar no MongoDB:', err));
 
+// MODELOS
 const usuarioSchema = new mongoose.Schema({
   email: String,
   senha: String,
   perfil: String,
   ra: String,
 });
+const Usuario = mongoose.model('Usuario', usuarioSchema);
+
+const pedidoSchema = new mongoose.Schema({
+  ra: String,
+  nome: String,
+  item: String,
+  quantidade: Number,
+  obs: String,
+  bebida: String,
+  status: String,
+  dataHora: String,
+});
+const Pedido = mongoose.model('Pedido', pedidoSchema);
+
 const reservaSchema = new mongoose.Schema({
   ra: String,
   nome: String,
   data: String,
   horario: String,
-  pessoas: Number,
+  pessoas: String,
   telefone: String,
-  observacoes: String,
+  obs: String,
 });
-const pedidoSchema = new mongoose.Schema({
-  ra: String,
-  item: String,
-  quantidade: Number,
-  observacoes: String,
-  status: { type: String, default: 'pendente' },
-});
-
-const Usuario = mongoose.model('Usuario', usuarioSchema);
 const Reserva = mongoose.model('Reserva', reservaSchema);
-const Pedido = mongoose.model('Pedido', pedidoSchema);
 
-// ROTA DE CADASTRO
+// ROTAS
+
+// Cadastro
 app.post('/cadastro', async (req, res) => {
   const { email, senha, ra } = req.body;
 
-  if (!email || !senha || (email.endsWith('@p4ed.com') && !ra)) {
-    return res.status(400).json({ erro: 'Campos obrigatórios' });
-  }
+  if (!email || !senha) return res.status(400).json({ erro: 'Campos obrigatórios' });
 
   const perfil = email.endsWith('@p4ed.com') ? 'aluno'
     : email.endsWith('@sistemapoliedro.com.br') ? 'professor'
-    : email.endsWith('@gmail.com') ? 'restaurante'
+    : email === 'cozinha@gmail.com' ? 'restaurante'
     : null;
 
   if (!perfil) return res.status(400).json({ erro: 'Email inválido para cadastro' });
 
+  // Verificar se o email já existe
   const usuarioExistente = await Usuario.findOne({ email });
-  if (usuarioExistente) return res.status(409).json({ erro: 'Usuário já cadastrado' });
+  if (usuarioExistente) return res.status(409).json({ erro: 'E-mail já cadastrado' });
+
+  // Verificar RA apenas se for aluno
+  if (perfil === 'aluno') {
+    if (!ra || ra.length !== 7) {
+      return res.status(400).json({ erro: 'RA inválido (precisa ter 7 dígitos)' });
+    }
+
+    const raExistente = await Usuario.findOne({ ra });
+    if (raExistente) return res.status(409).json({ erro: 'RA já cadastrado' });
+  }
 
   const senhaHash = await bcrypt.hash(senha, 10);
-  const novoUsuario = new Usuario({ email, senha: senhaHash, perfil, ra });
-  await novoUsuario.save();
 
+  const novoUsuario = new Usuario({
+    email,
+    senha: senhaHash,
+    perfil,
+    ra: perfil === 'aluno' ? ra : null,
+  });
+
+  await novoUsuario.save();
   return res.status(201).json({ mensagem: 'Usuário cadastrado com sucesso', perfil });
 });
 
-// ROTA DE LOGIN
+
+// Login
 app.post('/login', async (req, res) => {
   const { email, senha } = req.body;
+  const user = await Usuario.findOne({ email });
+  if (!user) return res.status(404).json({ erro: 'Usuário não encontrado' });
 
-  if (email === 'cozinha@gmail.com' && senha === 'teste123') {
-  // retorna perfil restaurante mesmo se não estiver cadastrado
-  return res.status(200).json({ mensagem: 'Login autorizado', perfil: 'restaurante', ra: null });
-}
+  const ok = await bcrypt.compare(senha, user.senha);
+  if (!ok) return res.status(401).json({ erro: 'Senha incorreta' });
 
-
-  if (!email || !senha) return res.status(400).json({ erro: 'Preencha todos os campos' });
-
-  const usuario = await Usuario.findOne({ email });
-  if (!usuario) return res.status(404).json({ erro: 'Usuário não encontrado' });
-
-  const senhaValida = await bcrypt.compare(senha, usuario.senha);
-  if (!senhaValida) return res.status(401).json({ erro: 'Senha incorreta' });
-
-  return res.status(200).json({ mensagem: 'Login autorizado', perfil: usuario.perfil, ra: usuario.ra });
+  res.json({ perfil: user.perfil, ra: user.ra });
 });
 
-// ROTA DE RESERVA
-app.post('/reserva', async (req, res) => {
-  try {
-    const novaReserva = new Reserva(req.body);
-    await novaReserva.save();
-    res.status(201).json({ mensagem: 'Reserva registrada com sucesso' });
-  } catch (erro) {
-    console.error('Erro ao salvar reserva:', erro);
-    res.status(500).json({ erro: 'Erro ao registrar reserva' });
-  }
-});
-
-// ROTA DE PEDIDO
+// Salvar pedido
 app.post('/pedido', async (req, res) => {
-  try {
-    const novoPedido = new Pedido(req.body);
-    await novoPedido.save();
-    res.status(201).json({ mensagem: 'Pedido registrado com sucesso' });
-  } catch (erro) {
-    console.error('Erro ao salvar pedido:', erro);
-    res.status(500).json({ erro: 'Erro ao registrar pedido' });
-  }
+  const novo = new Pedido({ ...req.body, status: 'Pendente', dataHora: new Date().toLocaleString('pt-BR') });
+  await novo.save();
+  res.status(201).json({ mensagem: 'Pedido salvo' });
 });
 
-// GET RESERVAS (PAINEL)
-app.get('/reservas', async (req, res) => {
-  const reservas = await Reserva.find();
-  res.json(reservas);
-});
-
-// GET PEDIDOS (PAINEL)
-app.get('/pedidos', async (req, res) => {
+// Buscar pedidos
+app.get('/pedidos', async (_, res) => {
   const pedidos = await Pedido.find();
   res.json(pedidos);
 });
 
-// Atualizar o status do pedido
-app.patch('/pedido/:id', async (req, res) => {
+// Atualizar status do pedido
+app.put('/pedidos/:id/status', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-
-  try {
-    await Pedido.findByIdAndUpdate(id, { status });
-    res.status(200).json({ mensagem: 'Status atualizado com sucesso' });
-  } catch (error) {
-    res.status(500).json({ erro: 'Erro ao atualizar status' });
-  }
+  await Pedido.findByIdAndUpdate(id, { status });
+  res.json({ mensagem: 'Status atualizado' });
 });
 
-// Excluir um pedido
-app.delete('/pedido/:id', async (req, res) => {
+// Deletar pedido
+app.delete('/pedidos/:id', async (req, res) => {
   const { id } = req.params;
-
-  try {
-    await Pedido.findByIdAndDelete(id);
-    res.status(200).json({ mensagem: 'Pedido excluído com sucesso' });
-  } catch (error) {
-    res.status(500).json({ erro: 'Erro ao excluir pedido' });
-  }
+  await Pedido.findByIdAndDelete(id);
+  res.json({ mensagem: 'Pedido excluído' });
 });
 
+// Salvar reserva
+app.post('/reserva', async (req, res) => {
+  const nova = new Reserva(req.body);
+  await nova.save();
+  res.status(201).json({ mensagem: 'Reserva salva' });
+});
+
+// Buscar reservas
+app.get('/reservas', async (_, res) => {
+  const reservas = await Reserva.find();
+  res.json(reservas);
+});
+
+// Deletar reserva
+app.delete('/reservas/:id', async (req, res) => {
+  const { id } = req.params;
+  await Reserva.findByIdAndDelete(id);
+  res.json({ mensagem: 'Reserva excluída' });
+});
 
 app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
