@@ -48,7 +48,7 @@ export default function Cadastro() {
   console.log('📤 Dados a enviar:', dados);
 
   try {
-    const resposta = await fetch('http://192.168.0.66:3001/cadastro', { // tem q mudar essa 'http://xxxxxxxxxx:3001/cadastro' sempre q o servidor n logar, pode ser q n esteja no msm IP
+    const resposta = await fetch('http://10.2.2.129:3001/cadastro', { // tem q mudar essa 'http://xxxxxxxxxx:3001/cadastro' sempre q o servidor n logar, pode ser q n esteja no msm IP
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dados),
