@@ -16,14 +16,10 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
   );
   const [obs, setObs] = useState(pedidoInicial.obs || '');
   const [mostrarItens, setMostrarItens] = useState(false);
-
-  // Estados para bebida no final do formulário (opcional)
-  const [querBebida, setQuerBebida] = useState(
-    pedidoInicial.bebida ? true : false
-  );
+  const [querBebida, setQuerBebida] = useState(pedidoInicial.bebida ? true : false);
   const [bebida, setBebida] = useState(pedidoInicial.bebida || '');
-  const opcoesBebida = ['Água', 'Coca Cola', 'Coca Cola Zero', 'Suco'];
 
+  const opcoesBebida = ['Água', 'Coca Cola', 'Coca Cola Zero', 'Suco'];
   const opcoesItem = [
     'Filé de Frango Grelhado',
     'Linguiça Toscana Grelhada',
@@ -44,11 +40,29 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
   };
 
   const confirmar = () => {
-    // valida apenas campos obrigatórios iniciais
     if (!nome || !ra || !item || quantidade < 1) {
       alert('Por favor, preencha todos os campos obrigatórios!');
       return;
     }
+
+    const precos = {
+      'Filé de Frango Grelhado': 28.99,
+      'Linguiça Toscana Grelhada': 28.99,
+      'Linguiça Calabresa Acebolada': 28.99,
+      'Nuggets de Frango': 28.99,
+      'Salada com Filé de Frango': 26.99,
+      'Salada com Omelete': 26.99,
+      'Salada com Atum': 26.99,
+      'Salada Caesar': 27.99,
+      'Salada com Kibe Vegano ou Quiche': 31.99
+    };
+
+    const precoItem = precos[item] || 0;
+    const precoBebida = querBebida && bebida ? 5 : 0;
+    const total = quantidade * precoItem + precoBebida;
+
+    const resumo = `\n✅ Pedido realizado com sucesso!\n\n🍽️ Item: ${item} (x${quantidade})\n🥤 Bebida: ${querBebida && bebida ? bebida : 'Nenhuma'}\n💬 Observações: ${obs || 'Nenhuma'}\n\n💰 Total: R$ ${total.toFixed(2)}`;
+
     onConfirmar({
       nome,
       ra,
@@ -56,6 +70,7 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
       quantidade: quantidade.toString(),
       obs,
       bebida: querBebida ? bebida : null,
+      resumo,
     });
   };
 
@@ -79,10 +94,7 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
         onChangeText={setRA}
       />
 
-      <TouchableOpacity
-        onPress={() => setMostrarItens(!mostrarItens)}
-        style={styles.input}
-      >
+      <TouchableOpacity onPress={() => setMostrarItens(!mostrarItens)} style={styles.input}>
         <Text style={{ color: '#000' }}>{item || 'Selecionar Item*'}</Text>
       </TouchableOpacity>
 
@@ -97,12 +109,7 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
               }}
               style={[styles.opcaoBotao, item === it && styles.opcaoSelecionada]}
             >
-              <Text
-                style={[
-                  styles.opcaoTexto,
-                  item === it && styles.opcaoTextoSelecionado,
-                ]}
-              >
+              <Text style={[styles.opcaoTexto, item === it && styles.opcaoTextoSelecionado]}>
                 {it}
               </Text>
             </TouchableOpacity>
@@ -111,17 +118,11 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
       )}
 
       <View style={styles.seletorQuantidade}>
-        <TouchableOpacity
-          onPress={() => alterarQuantidade(-1)}
-          style={styles.botaoQtd}
-        >
+        <TouchableOpacity onPress={() => alterarQuantidade(-1)} style={styles.botaoQtd}>
           <Text style={styles.qtdTexto}>−</Text>
         </TouchableOpacity>
         <Text style={styles.qtdValor}>{quantidade}</Text>
-        <TouchableOpacity
-          onPress={() => alterarQuantidade(1)}
-          style={styles.botaoQtd}
-        >
+        <TouchableOpacity onPress={() => alterarQuantidade(1)} style={styles.botaoQtd}>
           <Text style={styles.qtdTexto}>+</Text>
         </TouchableOpacity>
       </View>
@@ -134,63 +135,35 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
         onChangeText={setObs}
       />
 
-      {/* Pergunta sobre bebida opcional no final */}
       <View style={styles.opcoesLinha}>
-  <TouchableOpacity
-    style={[
-      styles.opcaoBotao,
-      querBebida && styles.verdeSelecionado,
-    ]}
-    onPress={() => setQuerBebida(true)}
-  >
-    <Text
-      style={[
-        styles.opcaoTexto,
-        querBebida && styles.textoSelecionadoClaro,
-      ]}
-    >
-      Sim
-    </Text>
-  </TouchableOpacity>
-  <TouchableOpacity
-    style={[
-      styles.opcaoBotao,
-      !querBebida && styles.vermelhoSelecionado,
-    ]}
-    onPress={() => setQuerBebida(false)}
-  >
-    <Text
-      style={[
-        styles.opcaoTexto,
-        !querBebida && styles.textoSelecionadoClaro,
-      ]}
-    >
-      Não
-    </Text>
-  </TouchableOpacity>
-</View>
-
+        <TouchableOpacity
+          style={[styles.opcaoBotao, querBebida && styles.verdeSelecionado]}
+          onPress={() => setQuerBebida(true)}
+        >
+          <Text style={[styles.opcaoTexto, querBebida && styles.textoSelecionadoClaro]}>Sim</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.opcaoBotao, !querBebida && styles.vermelhoSelecionado]}
+          onPress={() => setQuerBebida(false)}
+        >
+          <Text style={[styles.opcaoTexto, !querBebida && styles.textoSelecionadoClaro]}>Não</Text>
+        </TouchableOpacity>
+      </View>
 
       {querBebida && (
         <View style={styles.opcoesLinha}>
-  {opcoesBebida.map((b) => (
-    <TouchableOpacity
-      key={b}
-      style={[styles.opcaoBotao, bebida === b && styles.pretoSelecionado]}
-      onPress={() => setBebida(b)}
-    >
-      <Text
-        style={[
-          styles.opcaoTexto,
-          bebida === b && styles.textoSelecionadoClaro,
-        ]}
-      >
-        {b}
-      </Text>
-    </TouchableOpacity>
-  ))}
-</View>
-
+          {opcoesBebida.map((b) => (
+            <TouchableOpacity
+              key={b}
+              style={[styles.opcaoBotao, bebida === b && styles.pretoSelecionado]}
+              onPress={() => setBebida(b)}
+            >
+              <Text style={[styles.opcaoTexto, bebida === b && styles.textoSelecionadoClaro]}>
+                {b}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       )}
 
       <TouchableOpacity onPress={confirmar} style={styles.botaoConfirmar}>
@@ -250,19 +223,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#c0392b',
   },
   verdeSelecionado: {
-  backgroundColor: '#27ae60',
-},
-vermelhoSelecionado: {
-  backgroundColor: '#e74c3c',
-},
-textoSelecionadoClaro: {
-  color: '#fff',
-  fontWeight: 'bold',
-},
-pretoSelecionado: {
-  backgroundColor: '#A9A9A9'
-},
-
+    backgroundColor: '#27ae60',
+  },
+  vermelhoSelecionado: {
+    backgroundColor: '#e74c3c',
+  },
+  textoSelecionadoClaro: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  pretoSelecionado: {
+    backgroundColor: '#A9A9A9',
+  },
   opcaoTexto: {
     color: '#000',
     fontWeight: 'bold',
