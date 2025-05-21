@@ -65,8 +65,8 @@ npm install mongoose cors bcrypt
 ## 🔐 Login - Acesso Cozinha (ADM)
 
 ```
-Usuário: Cozinha@sistemapoliedro.com.br
-Senha: teste123
+Usuário: 
+Senha: 
 ```
 
 ---
@@ -75,18 +75,36 @@ Senha: teste123
 
 ```
 fokus-base/
+├── .expo/                
+├── .vscode/               
 ├── app/
+│   ├── assets/
+│   │   └── logo.jpg
 │   ├── components/
+│   │   ├── FormularioPedido.jsx
 │   │   ├── FormularioReserva.jsx
-│   │   └── FormularioPedido.jsx
+│   │   └── VerReservaScreen.jsx
+│   ├── acesso-cozinha.jsx
+│   ├── cadastro.jsx
+│   ├── chat-aluno.jsx
+│   ├── editar-cardapio.jsx
 │   ├── index.jsx
-│   └── acesso-cozinha.jsx
-├── assets/
-├── .expo/
-├── node_modules/
+│   ├── painel-cozinha.jsx
+│   ├── reservar.jsx
+│   └── _layout.jsx
 ├── .gitignore
+├── app.json
+├── criarRestaurante.js
+├── eslint.config.js
+├── expo-env.d.ts
+├── package-lock.json
 ├── package.json
-└── README.md
+├── server.js
+└── tsconfig.json
+
+# Após rodar `npm install`
+├── node_modules/          # dependências do projeto
+
 ```
 
 ---
