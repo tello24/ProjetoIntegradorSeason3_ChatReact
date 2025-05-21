@@ -36,7 +36,18 @@ npm install
 ## ▶️ Executando o projeto
 
 ```bash
-npm start
+TERMINAL 1:
+cd fokus_base
+ngrok http 3001
+
+TERMINAL 2:
+cd fokus_base
+node server.js
+
+TERMINAL 3:
+cd fokus_base
+npx expo start
+pressionar "w" após carregar
 ```
 
 Abra o app no Expo Go (Android/iOS) escaneando o QR Code exibido no terminal ou navegador.
