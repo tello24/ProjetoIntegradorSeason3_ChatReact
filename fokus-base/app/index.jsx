@@ -17,8 +17,8 @@ import {
 
 export default function Index() {
   const [perfil, setPerfil] = useState(null);
-  const [email, setEmail] = useState('cozinha@gmail.com');
-  const [senha, setSenha] = useState('teste123');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const router = useRouter();
 
@@ -43,7 +43,7 @@ export default function Index() {
   }
 
     try {
-      const resposta = await fetch('http://10.2.2.129:3001/login', { // tem q mudar essa 'http://xxxxxxxxxx:3001/cadastro' sempre q o servidor n logar, pode ser q n esteja no msm IP
+      const resposta = await fetch('http://10.2.2.123:3001/login', { // tem q mudar essa 'http://xxxxxxxxxx:3001/cadastro' sempre q o servidor n logar, pode ser q n esteja no msm IP
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, senha }),
@@ -53,9 +53,16 @@ export default function Index() {
       console.log('🔵 Resposta do backend:', json);
 
       if (!resposta.ok) {
-        Alert.alert('Erro', json.erro || 'Falha no login');
-        return;
-      }
+  if (json.erro === 'Usuário não encontrado') {
+    Alert.alert('Erro', 'E-mail não encontrado. Verifique e tente novamente.');
+  } else if (json.erro === 'Senha incorreta') {
+    Alert.alert('Erro', 'Senha incorreta. Tente novamente.');
+  } else {
+    Alert.alert('Erro', json.erro || 'Erro no login.');
+  }
+  return;
+}
+
 
       // Roteamento conforme perfil vindo do backend
 if (json.perfil === 'restaurante') {
