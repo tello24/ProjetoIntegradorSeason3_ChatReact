@@ -13,7 +13,7 @@ import {
   Pressable,              
   KeyboardAvoidingView,
   Platform,
-  Animated,
+  Animated, useWindowDimensions,
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -53,7 +53,17 @@ export default function Index() {
   const router = useRouter();
   const flatListRef = useRef(null);
 
-  // Carregar dados iniciais
+  
+  // ── Layout responsivo  para desktop full-screen ──
+  const { width, height } = useWindowDimensions();
+  const isWeb = Platform.OS === 'web';
+  const dynamicRetangulo = isWeb
+    ? { width, height, borderRadius: 0 }
+    : { width: '100%' };
+      // Altura dinâmica do cabeçalho: menor no desktop
+  const headerHeight = isWeb ? 100 : 140;
+
+// Carregar dados iniciais
   useEffect(() => {
     AsyncStorage.getItem('ultimaReserva').then(data => {
       if (data) setUltimaReserva(JSON.parse(data));
@@ -284,10 +294,10 @@ function encontrarComandoSemelhante(input, comandos) {
       resizeMode="cover"
     >
       <KeyboardAvoidingView
-        style={styles.retangulo}
+        style={[styles.retangulo, dynamicRetangulo]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-       <View style={styles.topoCurvo}>
+       <View style={[styles.topoCurvo, { height: headerHeight }]}>
   <TouchableOpacity style={styles.logoutBotao} onPress={() => router.replace('/')}>
     <Ionicons name="log-out-outline" size={24} color="#fff" />
   </TouchableOpacity>
@@ -591,12 +601,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   retangulo: {
-    backgroundColor: '#fff',
-    width: '90%',
-    
-    maxWidth: 400,
-    aspectRatio: 9 / 16,
-    borderRadius: 16,
+    backgroundColor: '#fff',    borderRadius: 16,
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 2 },
