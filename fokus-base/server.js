@@ -52,27 +52,36 @@ const Reserva = mongoose.model('Reserva', reservaSchema);
 app.post('/cadastro', async (req, res) => {
   const { email, senha, ra } = req.body;
 
-  if (!email || !senha) return res.status(400).json({ erro: 'Campos obrigatórios' });
+  if (!email || !senha) {
+    return res.status(400).json({ erro: 'Campos obrigatórios' });
+  }
 
-  const perfil = email.endsWith('@p4ed.com') ? 'aluno'
-    : email.endsWith('@sistemapoliedro.com.br') ? 'professor'
-    : email === 'cozinha@gmail.com' ? 'restaurante'
-    : null;
+  // FORÇA o perfil com base no domínio do e-mail
+  let perfil = null;
 
-  if (!perfil) return res.status(400).json({ erro: 'Email inválido para cadastro' });
+  if (email.endsWith('@p4ed.com')) {
+    perfil = 'aluno';
+  } else if (email.endsWith('@sistemapoliedro.com.br')) {
+    perfil = 'professor';
+  } else {
+    return res.status(400).json({ erro: 'Email inválido. Use um domínio autorizado.' });
+  }
 
-  // Verificar se o email já existe
-  const usuarioExistente = await Usuario.findOne({ email });
-  if (usuarioExistente) return res.status(409).json({ erro: 'E-mail já cadastrado' });
+  // Impede que alunos usem email de professor e vice-versa
+  if (perfil === 'aluno' && (!ra || ra.length !== 7 || !/^\d+$/.test(ra))) {
+    return res.status(400).json({ erro: 'RA inválido. Precisa conter exatamente 7 números.' });
+  }
 
-  // Verificar RA apenas se for aluno
+  const emailExistente = await Usuario.findOne({ email });
+  if (emailExistente) {
+    return res.status(409).json({ erro: 'E-mail já cadastrado' });
+  }
+
   if (perfil === 'aluno') {
-    if (!ra || ra.length !== 7) {
-      return res.status(400).json({ erro: 'RA inválido (precisa ter 7 dígitos)' });
-    }
-
     const raExistente = await Usuario.findOne({ ra });
-    if (raExistente) return res.status(409).json({ erro: 'RA já cadastrado' });
+    if (raExistente) {
+      return res.status(409).json({ erro: 'RA já cadastrado' });
+    }
   }
 
   const senhaHash = await bcrypt.hash(senha, 10);
@@ -87,6 +96,8 @@ app.post('/cadastro', async (req, res) => {
   await novoUsuario.save();
   return res.status(201).json({ mensagem: 'Usuário cadastrado com sucesso', perfil });
 });
+
+
 
 
 // Login
