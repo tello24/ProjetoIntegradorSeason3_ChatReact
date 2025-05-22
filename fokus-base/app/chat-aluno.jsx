@@ -464,18 +464,47 @@ if (item.tipo === 'pedido') {
             }
             // Editar Pedido
             if (item.tipo === 'editar-pedido') {
-              return (
-                <AnimatedBalao style={[styles.balao, styles.bot]}>
-                  <FormularioPedido
-                    pedidoInicial={ultimoPedido}
-                    onConfirmar={pedido => {
-                      setUltimoPedido(pedido);
-                      setConversas(prev => [...prev, { id:Date.now().toString(), texto:`🔄 Pedido atualizado! Item: ${pedido.item} x${pedido.quantidade}`, de:'bot' }]);
-                    }}
-                  />
-                </AnimatedBalao>
-              );
-            }
+  return (
+    <AnimatedBalao style={[styles.balao, styles.bot]}>
+      <FormularioPedido
+        pedidoInicial={ultimoPedido}
+        onConfirmar={pedido => {
+          setUltimoPedido(pedido);
+          salvarPedidoGlobal(pedido);
+
+          const precos = {
+            'Filé de Frango Grelhado': 28.99,
+            'Linguiça Toscana Grelhada': 28.99,
+            'Linguiça Calabresa Acebolada': 28.99,
+            'Nuggets de Frango': 28.99,
+            'Salada com Filé de Frango': 26.99,
+            'Salada com Omelete': 26.99,
+            'Salada com Atum': 26.99,
+            'Salada Caesar': 27.99,
+            'Salada com Kibe Vegano ou Quiche': 31.99,
+          };
+
+          const precoItem = precos[pedido.item] || 0;
+          const precoBebida = pedido.bebida ? 5 : 0;
+          const total = parseInt(pedido.quantidade) * precoItem + precoBebida;
+
+          setConversas(prev => {
+            const semForm = prev.filter(i => i.tipo !== 'editar-pedido');
+            return [
+              ...semForm,
+              {
+                id: (Date.now() + 1).toString(),
+                texto: `✅ Pedido atualizado com sucesso!\n\n🍽️ Item: ${pedido.item} (x${pedido.quantidade})\n🥤 Bebida: ${pedido.bebida || 'Nenhuma'}\n💬 Observações: ${pedido.obs || 'Nenhuma'}\n\n💰 Total: R$ ${total.toFixed(2)}`,
+                de: 'bot'
+              }
+            ];
+          });
+        }}
+      />
+    </AnimatedBalao>
+  );
+}
+
             // Mensagens padrão
             return (
               <AnimatedBalao style={[styles.balao, item.de==='cliente'?styles.cliente:styles.bot]}>
