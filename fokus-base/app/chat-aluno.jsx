@@ -54,14 +54,21 @@ export default function Index() {
   const flatListRef = useRef(null);
 
   
-  // ── Layout responsivo  para desktop full-screen ──
-  const { width, height } = useWindowDimensions();
+ // responsivdidade
+    const { width, height } = useWindowDimensions();
   const isWeb = Platform.OS === 'web';
-  const dynamicRetangulo = isWeb
-    ? { width, height, borderRadius: 0 }
-    : { width: '100%' };
-      // Altura dinâmica do cabeçalho: menor no desktop
-  const headerHeight = isWeb ? 100 : 140;
+  const dynamicStyle = isWeb
+    ? {
+        width: Math.min(width * 0.98, 1600),
+        height: Math.min(height * 0.98, 1200),
+      }
+    : {
+        width: width * 0.9,
+        height: height * 0.8,
+      };
+
+ 
+
 
 // Carregar dados iniciais
   useEffect(() => {
@@ -294,10 +301,10 @@ function encontrarComandoSemelhante(input, comandos) {
       resizeMode="cover"
     >
       <KeyboardAvoidingView
-        style={[styles.retangulo, dynamicRetangulo]}
+        style={[styles.retangulo, dynamicStyle]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-       <View style={[styles.topoCurvo, { height: headerHeight }]}>
+       <View style={[styles.topoCurvo]}>
   <TouchableOpacity style={styles.logoutBotao} onPress={() => router.replace('/')}>
     <Ionicons name="log-out-outline" size={24} color="#fff" />
   </TouchableOpacity>
@@ -313,7 +320,7 @@ function encontrarComandoSemelhante(input, comandos) {
           ref={flatListRef}
           data={conversas}
           keyExtractor={item => item.id}
-          style={styles.chat}
+          style={[styles.chat]}
           contentContainerStyle={{ padding: 10 }}
           onContentSizeChange={(_, contentHeight) =>
           flatListRef.current?.scrollToOffset({ offset: contentHeight, animated: true })  
