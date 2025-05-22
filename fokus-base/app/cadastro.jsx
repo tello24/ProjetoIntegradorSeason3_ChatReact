@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView } from 'react-native';
+import Toast from 'react-native-root-toast';
 
 import {
   View,
@@ -27,50 +28,45 @@ export default function Cadastro() {
   const router = useRouter();
 
   const cadastrarUsuario = async () => {
-  console.log('🟡 Início da função');
-
   if (!email || !senha || !confirmarSenha) {
-    Alert.alert('Erro', 'Preencha todos os campos.');
+    Toast.show('Preencha todos os campos.', { duration: Toast.durations.SHORT });
     return;
   }
 
   if (senha !== confirmarSenha) {
-    Alert.alert('Erro', 'Senhas diferentes');
+    Toast.show('Senhas diferentes.', { duration: Toast.durations.SHORT });
     return;
   }
 
   const dados = {
     email,
     senha,
+    perfil,
     ...(perfil === 'aluno' && ra ? { ra } : {}),
   };
 
-  console.log('📤 Dados a enviar:', dados);
-
   try {
-    const resposta = await fetch('http://10.2.2.129:3001/cadastro', { // tem q mudar essa 'http://xxxxxxxxxx:3001/cadastro' sempre q o servidor n logar, pode ser q n esteja no msm IP
+    const resposta = await fetch('http://10.2.2.123:3001/cadastro', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dados),
     });
 
-    console.log('📥 Status HTTP:', resposta.status);
-
     const json = await resposta.json();
-    console.log('📨 JSON:', json);
 
     if (!resposta.ok) {
-      Alert.alert('Erro', json.erro || 'Erro ao cadastrar');
+      Toast.show(json.erro || 'Erro ao cadastrar.', { duration: Toast.durations.LONG });
       return;
     }
 
-    Alert.alert('Sucesso', 'Conta criada com sucesso!');
+    Toast.show('Conta criada com sucesso!', { duration: Toast.durations.SHORT });
     router.replace('/chat-aluno');
   } catch (erro) {
     console.error('❌ Erro no cadastro:', erro);
-    Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+    Toast.show('Erro de conexão com o servidor.', { duration: Toast.durations.LONG });
   }
 };
+
 
 
 
