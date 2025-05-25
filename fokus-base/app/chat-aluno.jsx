@@ -541,89 +541,39 @@ if (item.tipo === 'pedido') {
 >
   <Text style={styles.seta}>➤</Text>
 </Pressable>
+  </View>
 
+    <View style={styles.botoesRodape}>
+          {[
+            { label: 'Cardápio', onPress: responderCardapio },
+            { label: 'Horários', onPress: responderHorario },
+            { label: 'Fazer Pedido', onPress: () => setConversas(prev => [...prev, { id: Date.now().toString(), tipo: 'pedido', de: 'bot' }]) },
+            { label: 'Ver Pedido', onPress: () => {
+                if (ultimoPedido) {
+                  setConversas(prev => [...prev, { id: Date.now().toString(), tipo: 'opcoes-pedido', de: 'bot' }]);
+                } else {
+                  setConversas(prev => [...prev, { id: Date.now().toString(), texto: 'Você não tem pedidos ativos. Deseja fazer um?', de: 'bot' }]);
+                  esperandoConfirmacao.current = 'pedido';
+                }
+              }
+            },
+          ].map((btn) => (
+            <Pressable
+              key={btn.label}
+              onPress={btn.onPress}
+              android_ripple={{ color: 'transparent' }}
+              onHoverIn={() => setHovered(btn.label)}
+              onHoverOut={() => setHovered(null)}
+              style={({ pressed }) => [
+                styles.botaoRodape,
+                hovered === btn.label && styles.botaoRodapeHover,
+                pressed && styles.botaoRodapePress,
+              ]}
+            >
+              <Text style={styles.botaoTextoRodape}>{btn.label}</Text>
+            </Pressable>
+          ))}
         </View>
-
-  <View style={styles.botoesRodape}>
-  {[
-    { label: '🍽️ Cardápio', onPress: responderCardapio },
-    { label: '🕒 Horários', onPress: responderHorario },
-    {
-      label: '📅 Reservar',
-      onPress: () =>
-        setConversas((prev) => [
-          ...prev,
-          { id: Date.now().toString(), tipo: 'formulario', de: 'bot' },
-        ]),
-    },
-    {
-      label: '📋 Ver Reserva',
-      onPress: () => {
-        if (ultimaReserva) {
-          setConversas((prev) => [
-            ...prev,
-            { id: Date.now().toString(), tipo: 'opcoes-reserva', de: 'bot' },
-          ]);
-        } else {
-          setConversas((prev) => [
-            ...prev,
-            {
-              id: Date.now().toString(),
-              texto: '📋 Você não tem reservas ativas. Deseja fazer uma?',
-              de: 'bot',
-            },
-          ]);
-          esperandoConfirmacao.current = 'reserva';
-        }
-      },
-    },
-    {
-      label: '🛒 Fazer Pedido',
-      onPress: () =>
-        setConversas((prev) => [
-          ...prev,
-          { id: Date.now().toString(), tipo: 'pedido', de: 'bot' },
-        ]),
-    },
-    {
-      label: '📦 Ver Pedido',
-      onPress: () => {
-        if (ultimoPedido) {
-          setConversas((prev) => [
-            ...prev,
-            { id: Date.now().toString(), tipo: 'opcoes-pedido', de: 'bot' },
-          ]);
-        } else {
-          setConversas((prev) => [
-            ...prev,
-            {
-              id: Date.now().toString(),
-              texto: '📦 Você não tem pedidos ativos. Deseja fazer um?',
-              de: 'bot',
-            },
-          ]);
-          esperandoConfirmacao.current = 'pedido';
-        }
-      },
-    },
-  ].map((btn) => (
-    <Pressable
-  key={btn.label}
-  onPress={btn.onPress}
-  android_ripple={{ color: 'transparent' }}
-  onHoverIn={() => setHovered(btn.label)}
-  onHoverOut={() => setHovered(null)}
-  style={({ pressed }) => [
-    styles.botaoRodape,
-    hovered === btn.label && styles.botaoRodapeHover,
-    pressed && styles.botaoRodapePress
-  ]}
->
-  <Text style={styles.botaoTextoRodape}>{btn.label}</Text>
-</Pressable>
-
-  ))}
-</View>
       </KeyboardAvoidingView>
     </ImageBackground>
   );
@@ -778,11 +728,12 @@ headerCentro: {
   botaoRodape: {
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 8,
-    margin: 6,
-    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    margin: 8,
+    borderRadius: 24,
     width: '30%',
+    maxWidth: 220,
     backgroundColor: '#16C1D7',  
   },
   botaoRodapePress: {
@@ -793,11 +744,11 @@ headerCentro: {
 },
 
   botaoTextoRodape: {
-    fontSize: 13,
+    fontSize: 16,
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 20,
   },
   acessoRodape: {
     alignItems: 'center',
