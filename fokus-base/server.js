@@ -46,6 +46,20 @@ const reservaSchema = new mongoose.Schema({
 });
 const Reserva = mongoose.model('Reserva', reservaSchema);
 
+const categoriaSchema = new mongoose.Schema({
+  nome: String,
+  itens: [
+    {
+      nome: String,
+      preco: Number,
+    },
+  ],
+});
+
+const Categoria = mongoose.model('Categoria', categoriaSchema);
+
+
+
 // ROTAS
 
 // Cadastro
@@ -128,10 +142,17 @@ app.post('/pedido', async (req, res) => {
 });
 
 // Buscar pedidos
-app.get('/pedidos', async (_, res) => {
-  const pedidos = await Pedido.find();
-  res.json(pedidos);
+app.post('/pedido', async (req, res) => {
+   console.log('📥 Novo pedido recebido:', req.body);
+  const novo = new Pedido({
+    ...req.body,
+    status: 'Pendente',
+    dataHora: new Date().toLocaleString('pt-BR'),
+  });
+  await novo.save();
+  res.status(201).json({ mensagem: 'Pedido salvo' });
 });
+
 
 // Atualizar status do pedido
 app.put('/pedidos/:id/status', async (req, res) => {
@@ -167,5 +188,63 @@ app.delete('/reservas/:id', async (req, res) => {
   await Reserva.findByIdAndDelete(id);
   res.json({ mensagem: 'Reserva excluída' });
 });
+
+// Buscar todas as categorias
+app.get('/cardapio', async (req, res) => {
+  try {
+    const categorias = await Categoria.find();
+    res.json(categorias);
+  } catch (e) {
+    console.error('Erro ao buscar cardápio:', e);
+    res.status(500).json({ erro: 'Erro ao buscar cardápio' });
+  }
+});
+
+// Salvar categorias individualmente
+// Salvar múltiplas categorias como documentos separados
+app.post('/cardapio', async (req, res) => {
+  try {
+    const categorias = req.body.categorias;
+
+    // Salvar cada categoria como um documento separado
+    const resultados = await Promise.all(
+      categorias.map(async (cat) => {
+        if (cat._id) {
+          // Atualiza se já existir
+          return Categoria.findByIdAndUpdate(cat._id, cat, { new: true });
+        } else {
+          // Cria nova
+          const nova = new Categoria(cat);
+          return nova.save();
+        }
+      })
+    );
+
+    res.status(201).json({ mensagem: 'Cardápio salvo com sucesso!', categorias: resultados });
+  } catch (e) {
+    console.error('Erro ao salvar categorias:', e);
+    res.status(500).json({ erro: 'Erro ao salvar categorias' });
+  }
+});
+
+
+
+app.delete('/cardapio/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const categoria = await Categoria.findByIdAndDelete(id);
+    if (!categoria) {
+      return res.status(404).json({ erro: 'Categoria não encontrada' });
+    }
+    res.json({ mensagem: 'Categoria excluída com sucesso!' });
+  } catch (e) {
+    console.error('❌ Erro ao excluir categoria:', e);
+    res.status(500).json({ erro: 'Erro ao excluir categoria' });
+  }
+});
+
+
+
 
 app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
