@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { CARDAPIO_URL, PEDIDO_URL } from '../utils/config';
 import {
   View,
   Text,
@@ -6,111 +7,148 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
   const [nome, setNome] = useState(pedidoInicial.nome || '');
-  const [ra, setRA] = useState(pedidoInicial.ra || '');
-  const [item, setItem] = useState(pedidoInicial.item || '');
-  const [quantidade, setQuantidade] = useState(
-    parseInt(pedidoInicial.quantidade) || 1
-  );
+  const [ra, setRA] = useState('');
+  const [item, setItem] = useState(null);
+  const [quantidade, setQuantidade] = useState(parseInt(pedidoInicial.quantidade) || 1);
   const [obs, setObs] = useState(pedidoInicial.obs || '');
   const [mostrarItens, setMostrarItens] = useState(false);
   const [querBebida, setQuerBebida] = useState(pedidoInicial.bebida ? true : false);
   const [bebida, setBebida] = useState(pedidoInicial.bebida || '');
+  const [cardapio, setCardapio] = useState([]);
 
   const opcoesBebida = ['Água', 'Coca Cola', 'Coca Cola Zero', 'Suco'];
-  const opcoesItem = [
-    'Filé de Frango Grelhado',
-    'Linguiça Toscana Grelhada',
-    'Linguiça Calabresa Acebolada',
-    'Nuggets de Frango',
-    'Salada com Filé de Frango',
-    'Salada com Omelete',
-    'Salada com Atum',
-    'Salada Caesar',
-    'Salada com Kibe Vegano ou Quiche',
-  ];
+
+useEffect(() => {
+  const carregarCardapio = async () => {
+    try {
+      const res = await fetch(CARDAPIO_URL);
+      const data = await res.json();
+
+      // Se data for um array, ótimo — use direto
+      if (Array.isArray(data)) {
+        const todosItens = data.flatMap(cat => cat.itens || []);
+        setCardapio(todosItens);
+      } else if (Array.isArray(data.categorias)) {
+        const todosItens = data.categorias.flatMap(cat => cat.itens || []);
+        setCardapio(todosItens);
+      } else {
+        setCardapio([]); // fallback seguro
+      }
+    } catch (err) {
+      console.error('❌ Erro ao carregar cardápio:', err);
+      setCardapio([]); // limpa para não quebrar render
+    }
+  };
+
+  const carregarRA = async () => {
+    const raSalvo = await AsyncStorage.getItem('ra');
+    if (raSalvo) setRA(raSalvo);
+  };
+
+  carregarCardapio();
+  carregarRA();
+}, []);
+
+
+
 
   const alterarQuantidade = (delta) => {
-    setQuantidade((prev) => {
+    setQuantidade(prev => {
       const nova = prev + delta;
       return nova < 1 ? 1 : nova > 10 ? 10 : nova;
     });
   };
 
-  const confirmar = () => {
-    if (!nome || !ra || !item || quantidade < 1) {
-      alert('Por favor, preencha todos os campos obrigatórios!');
-      return;
-    }
+  const confirmar = async () => {
+  if (!nome || !ra || !item?.nome || quantidade < 1) {
+    alert('Por favor, preencha todos os campos obrigatórios!');
+    return;
+  }
 
-    const precos = {
-      'Filé de Frango Grelhado': 28.99,
-      'Linguiça Toscana Grelhada': 28.99,
-      'Linguiça Calabresa Acebolada': 28.99,
-      'Nuggets de Frango': 28.99,
-      'Salada com Filé de Frango': 26.99,
-      'Salada com Omelete': 26.99,
-      'Salada com Atum': 26.99,
-      'Salada Caesar': 27.99,
-      'Salada com Kibe Vegano ou Quiche': 31.99
-    };
+  const precoItem = parseFloat(item?.preco) || 0;
+  const totalItem = precoItem * quantidade;
+  const precoBebida = querBebida && bebida ? 5 : 0;
+  const totalGeral = totalItem + precoBebida;
 
-    const precoItem = precos[item] || 0;
-    const precoBebida = querBebida && bebida ? 5 : 0;
-    const total = quantidade * precoItem + precoBebida;
+  console.log('🧾 DEBUG:', {
+    item,
+    precoItem,
+    quantidade,
+    totalItem,
+    precoBebida,
+    totalGeral,
+  });
 
-    const resumo = `\n✅ Pedido realizado com sucesso!\n\n🍽️ Item: ${item} (x${quantidade})\n🥤 Bebida: ${querBebida && bebida ? bebida : 'Nenhuma'}\n💬 Observações: ${obs || 'Nenhuma'}\n\n💰 Total: R$ ${total.toFixed(2)}`;
+  const resumo = `✅ Pedido realizado com sucesso!
 
-    onConfirmar({
-      nome,
-      ra,
-      item,
-      quantidade: quantidade.toString(),
-      obs,
-      bebida: querBebida ? bebida : null,
-      resumo,
+🍽️ ${item.nome} (x${quantidade}) – R$ ${totalItem.toFixed(2)}
+🥤 Bebida: ${querBebida && bebida ? bebida + ' – R$ 5,00' : 'Nenhuma'}
+💬 Observações: ${obs || 'Nenhuma'}
+
+💰 Total Comida: R$ ${totalItem.toFixed(2)}
+💰 Total Bebida: R$ ${precoBebida.toFixed(2)}
+💵 TOTAL: R$ ${totalGeral.toFixed(2)}`;
+
+  // 👉 Envia para o backend
+  try {
+    await fetch(PEDIDO_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome,
+        ra,
+        item: item.nome,
+        quantidade: quantidade.toString(),
+        obs,
+        bebida: querBebida ? bebida : null,
+        status: 'Pendente',
+        dataHora: new Date().toLocaleString('pt-BR'),
+      }),
     });
-  };
+  } catch (err) {
+    console.error('❌ Erro ao salvar pedido no banco:', err);
+  }
+
+  // 👇 Isso ainda exibe o balão no chat normalmente
+  onConfirmar({
+    nome,
+    ra,
+    item: item.nome,
+    quantidade: quantidade.toString(),
+    obs,
+    bebida: querBebida ? bebida : null,
+    resumo,
+  });
+};
+
 
   return (
     <View style={styles.balaoPedido}>
       <Text style={styles.titulo}>🛒 Fazer Pedido</Text>
 
-      <TextInput
-        placeholder="Seu Nome*"
-        placeholderTextColor="#888"
-        style={styles.input}
-        value={nome}
-        onChangeText={setNome}
-      />
-
-      <TextInput
-        placeholder="RA do Aluno*"
-        placeholderTextColor="#888"
-        style={styles.input}
-        value={ra}
-        onChangeText={setRA}
-      />
+      <TextInput placeholder="Seu Nome*" style={styles.input} value={nome} onChangeText={setNome} placeholderTextColor="#888" />
 
       <TouchableOpacity onPress={() => setMostrarItens(!mostrarItens)} style={styles.input}>
-        <Text style={{ color: '#000' }}>{item || 'Selecionar Item*'}</Text>
+        <Text style={{ color: '#000' }}>{item?.nome || 'Selecionar Item*'}</Text>
       </TouchableOpacity>
 
       {mostrarItens && (
         <View style={styles.opcoesLinha}>
-          {opcoesItem.map((it) => (
+          {cardapio.map((it) => (
             <TouchableOpacity
-              key={it}
+              key={it.nome}
               onPress={() => {
                 setItem(it);
                 setMostrarItens(false);
               }}
-              style={[styles.opcaoBotao, item === it && styles.opcaoSelecionada]}
+              style={[styles.opcaoBotao, item?.nome === it.nome && styles.opcaoSelecionada]}
             >
-              <Text style={[styles.opcaoTexto, item === it && styles.opcaoTextoSelecionado]}>
-                {it}
+              <Text style={[styles.opcaoTexto, item === it.nome && styles.opcaoTextoSelecionado]}>
+                {it.nome} – R$ {it.preco.toFixed(2)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -127,25 +165,13 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
         </TouchableOpacity>
       </View>
 
-      <TextInput
-        placeholder="Observações"
-        placeholderTextColor="#888"
-        style={styles.input}
-        value={obs}
-        onChangeText={setObs}
-      />
+      <TextInput placeholder="Observações" style={styles.input} value={obs} onChangeText={setObs} placeholderTextColor="#888" />
 
       <View style={styles.opcoesLinha}>
-        <TouchableOpacity
-          style={[styles.opcaoBotao, querBebida && styles.verdeSelecionado]}
-          onPress={() => setQuerBebida(true)}
-        >
+        <TouchableOpacity style={[styles.opcaoBotao, querBebida && styles.verdeSelecionado]} onPress={() => setQuerBebida(true)}>
           <Text style={[styles.opcaoTexto, querBebida && styles.textoSelecionadoClaro]}>Sim</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.opcaoBotao, !querBebida && styles.vermelhoSelecionado]}
-          onPress={() => setQuerBebida(false)}
-        >
+        <TouchableOpacity style={[styles.opcaoBotao, !querBebida && styles.vermelhoSelecionado]} onPress={() => setQuerBebida(false)}>
           <Text style={[styles.opcaoTexto, !querBebida && styles.textoSelecionadoClaro]}>Não</Text>
         </TouchableOpacity>
       </View>
@@ -158,9 +184,7 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
               style={[styles.opcaoBotao, bebida === b && styles.pretoSelecionado]}
               onPress={() => setBebida(b)}
             >
-              <Text style={[styles.opcaoTexto, bebida === b && styles.textoSelecionadoClaro]}>
-                {b}
-              </Text>
+              <Text style={[styles.opcaoTexto, bebida === b && styles.textoSelecionadoClaro]}>{b}</Text>
             </TouchableOpacity>
           ))}
         </View>
