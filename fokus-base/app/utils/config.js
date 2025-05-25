@@ -1,4 +1,4 @@
-export const BASE_URL = 'http://192.168.0.66:3001'; // atualize o IP e porta quando mudar
+export const BASE_URL = 'http://:3001'; // atualize o IP e porta quando mudar 'http://INSIRA-O-IP-AQUI:3001'
 
 export const CARDAPIO_URL = `${BASE_URL}/cardapio`;
 export const CADASTRO_URL = `${BASE_URL}/cadastro`;
