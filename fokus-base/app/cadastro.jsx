@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView } from 'react-native';
 import Toast from 'react-native-root-toast';
+import { BASE_URL } from './utils/config';
 
 import {
   View,
@@ -46,11 +47,12 @@ export default function Cadastro() {
   };
 
   try {
-    const resposta = await fetch('http://10.2.2.123:3001/cadastro', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dados),
-    });
+const resposta = await fetch(`${BASE_URL}/cadastro`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(dados),
+});
+
 
     const json = await resposta.json();
 
