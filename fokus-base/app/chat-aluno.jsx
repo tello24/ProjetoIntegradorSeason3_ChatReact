@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { CARDAPIO_URL } from './utils/config';
 import {
   StyleSheet,
   Text,
@@ -173,30 +174,48 @@ const salvarPedidoGlobal = async (pedido) => {
   setMensagem('');
 };
 
-
-
-const responderCardapio = () => {
+const responderCardapio = async () => {
   const pergunta = { id: Date.now().toString(), texto: 'Quero ver o cardápio!', de: 'cliente' };
-  const resposta = {
-    id: (Date.now()+1).toString(),
-    texto: `🍽️ Nosso Cardápio
+  setConversas(prev => [...prev, pergunta]);
 
-Pratos Principais
-Filé de Frango Grelhado – R$ 28,99
-Linguiça Toscana Grelhada – R$ 28,99
-Linguiça Calabresa Acebolada – R$ 28,99
-Nuggets de Frango – R$ 28,99
+  try {
+    const res = await fetch(CARDAPIO_URL);
+    const data = await res.json();
 
-Saladas
-Salada com Filé de Frango – R$ 26,99
-Salada com Omelete – R$ 26,99
-Salada com Atum – R$ 26,99
-Salada Caesar – R$ 27,99
-Salada com Kibe Vegano ou Quiche – R$ 31,99`,
-    de: 'bot',
-  };
-  setConversas(prev => [...prev, pergunta, resposta]);
+    const categorias = Array.isArray(data) ? data : data.categorias || [];
+
+    if (!categorias.length) {
+      const msg = {
+        id: (Date.now() + 1).toString(),
+        texto: '📭 Cardápio indisponível no momento.',
+        de: 'bot',
+      };
+      return setConversas(prev => [...prev, msg]);
+    }
+
+    const respostaFormatada = categorias.map(cat => {
+      const itensFormatados = cat.itens.map(i => `• ${i.nome} – R$ ${i.preco.toFixed(2)}`).join('\n');
+      return ` ${cat.nome}\n${itensFormatados}`;
+    }).join('\n\n');
+
+    const resposta = {
+      id: (Date.now() + 2).toString(),
+      texto: `🍽️ Nosso Cardápio\n\n${respostaFormatada}`,
+      de: 'bot',
+    };
+
+    setConversas(prev => [...prev, resposta]);
+  } catch (err) {
+    console.error('❌ Erro ao carregar cardápio:', err);
+    const erro = {
+      id: (Date.now() + 3).toString(),
+      texto: '❌ Erro ao carregar o cardápio. Tente novamente mais tarde.',
+      de: 'bot',
+    };
+    setConversas(prev => [...prev, erro]);
+  }
 };
+
 
 const responderHorario = () => {
   const pergunta = { id: Date.now().toString(), texto: 'Quais são os horários?', de: 'cliente' };
@@ -348,42 +367,23 @@ if (item.tipo === 'pedido') {
   return (
     <AnimatedBalao style={[styles.balao, styles.bot]}>
       <FormularioPedido
-        onConfirmar={pedido => {
-          setUltimoPedido(pedido);
-          salvarPedidoGlobal(pedido);
-          setConversas(prev => {
-  const semForm = prev.filter(i => i.tipo !== 'pedido');
+  onConfirmar={pedido => {
+    setUltimoPedido(pedido);
+    salvarPedidoGlobal(pedido);
+    setConversas(prev => {
+      const semForm = prev.filter(i => i.tipo !== 'pedido');
+      return [
+        ...semForm,
+        {
+          id: (Date.now() + 1).toString(),
+          texto: pedido.resumo, // ← ✅ usa o resumo que já vem pronto
+          de: 'bot'
+        }
+      ];
+    });
+  }}
+/>
 
-  // Calcula o preço baseado no item e bebida
-  const precos = {
-    'Filé de Frango Grelhado': 28.99,
-    'Linguiça Toscana Grelhada': 28.99,
-    'Linguiça Calabresa Acebolada': 28.99,
-    'Nuggets de Frango': 28.99,
-    'Salada com Filé de Frango': 26.99,
-    'Salada com Omelete': 26.99,
-    'Salada com Atum': 26.99,
-    'Salada Caesar': 27.99,
-    'Salada com Kibe Vegano ou Quiche': 31.99
-  };
-  const precoItem = precos[pedido.item] || 0;
-  const precoBebida = pedido.bebida ? 5 : 0;
-  const total = pedido.quantidade * precoItem + precoBebida;
-
-  const resumo = `✅ Pedido realizado com sucesso!\n\n🍽️ ${pedido.item} (x${pedido.quantidade})\n🥤 Bebida: ${pedido.bebida || 'Nenhuma'}\n💬 Obs: ${pedido.obs || 'Nenhuma'}\n\n💰 Total: R$ ${total.toFixed(2)}`;
-
-  return [
-    ...semForm,
-    { 
-      id: (Date.now() + 1).toString(), 
-      texto: resumo,
-      de: 'bot' 
-    }
-  ];
-});
-
-        }}
-      />
     </AnimatedBalao>
   );
 }
