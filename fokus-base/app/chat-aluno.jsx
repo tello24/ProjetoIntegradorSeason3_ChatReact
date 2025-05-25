@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
   },
   topoCurvo: {
   backgroundColor: '#16C1D7',
-  height: 140,
+  height: 95,
   borderBottomLeftRadius: 40,
   borderBottomRightRadius: 40,
   paddingTop: 16,
