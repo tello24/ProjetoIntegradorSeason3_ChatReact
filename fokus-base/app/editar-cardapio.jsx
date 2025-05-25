@@ -71,13 +71,21 @@ export default function EditarCardapio() {
   };
 
   const salvarCardapio = async () => {
-    try {
-      await AsyncStorage.setItem('cardapio', JSON.stringify(categorias));
-      alert('Cardápio salvo com sucesso!');
-    } catch (e) {
-      console.log('Erro ao salvar cardápio:', e);
-    }
-  };
+  try {
+    // Salva localmente (opcional)
+    await AsyncStorage.setItem('cardapio', JSON.stringify(categorias));
+
+    // Salva no MongoDB via backend
+    await fetch('http://10.2.2.232:3001/cardapio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(categorias),
+    });
+    alert('Cardápio salvo com sucesso!');
+  } catch (e) {
+    console.log('Erro ao salvar cardápio:', e);
+  }
+};
 
   return (
     <ImageBackground

@@ -43,7 +43,7 @@ export default function Index() {
   }
 
     try {
-      const resposta = await fetch('http://10.2.2.123:3001/login', { // tem q mudar essa 'http://xxxxxxxxxx:3001/cadastro' sempre q o servidor n logar, pode ser q n esteja no msm IP
+      const resposta = await fetch('http://10.2.2.232:3001/login', { // tem q mudar essa 'http://xxxxxxxxxx:3001/cadastro' sempre q o servidor n logar, pode ser q n esteja no msm IP
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, senha }),

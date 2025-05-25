@@ -168,4 +168,46 @@ app.delete('/reservas/:id', async (req, res) => {
   res.json({ mensagem: 'Reserva excluída' });
 });
 
+
+// No início do server.js
+const cardapioSchema = new mongoose.Schema({
+  categorias: [
+    {
+      nome: String,
+      itens: [
+        {
+          nome: String,
+          preco: String,
+        }
+      ]
+    }
+  ]
+});
+const Cardapio = mongoose.model('Cardapio', cardapioSchema);
+
+// Rota para salvar o cardápio
+app.use(express.json());
+app.post('/cardapio', async (req, res) => {
+  try {
+    console.log(req.body);
+    await Cardapio.deleteMany({});
+    const cardapio = new Cardapio({ categorias: req.body });
+    
+    await cardapio.save();
+    res.status(201).json({ message: 'Cardápio salvo no MongoDB!' });
+  } catch (e) {
+    console.log('ERRO AO SALVAR:', e);
+    res.status(500).json({ erro: 'Erro ao salvar cardápio', detalhes: e });
+  }
+});
+
+app.get('/cardapio', async (req, res) => {
+  try {
+    const cardapio = await Cardapio.findOne();
+    res.status(200).json(cardapio);
+  } catch (e) {
+    res.status(500).json({ erro: 'Erro ao buscar cardápio', detalhes: e });
+  }
+});
+
 app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));

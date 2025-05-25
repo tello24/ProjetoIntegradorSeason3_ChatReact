@@ -46,7 +46,7 @@ export default function Cadastro() {
   };
 
   try {
-    const resposta = await fetch('http://10.2.2.123:3001/cadastro', {
+    const resposta = await fetch('http://10.2.2.232:3001/cadastro', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dados),
