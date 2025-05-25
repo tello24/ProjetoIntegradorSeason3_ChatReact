@@ -1,5 +1,7 @@
 // app/editar-cardapio.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Toast from 'react-native-root-toast';
+import { CARDAPIO_URL } from './utils/config';
 import {
   View,
   Text,
@@ -12,18 +14,33 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function EditarCardapio() {
   const router = useRouter();
   const [categorias, setCategorias] = useState([]);
 
+  // Carrega o cardápio do banco ao abrir a tela
+  useEffect(() => {
+    const carregar = async () => {
+      try {
+        const resposta = await fetch(CARDAPIO_URL);
+        const json = await resposta.json();
+        if (json?.categorias) setCategorias(json.categorias);
+      } catch (e) {
+        console.log('❌ Erro ao carregar cardápio:', e);
+      }
+    };
+    carregar();
+  }, []);
+
   const adicionarCategoria = () => {
-    setCategorias((prev) => [
-      ...prev,
-      { id: Date.now().toString(), nome: '', itens: [{ nome: '', preco: '' }] },
-    ]);
-  };
+  const novoId = Date.now().toString(); 
+  setCategorias((prev) => [
+    ...prev,
+    { id: novoId, nome: '', itens: [{ nome: '', preco: '' }] },
+  ]);
+};
+
 
   const atualizarCategoria = (id, campo, valor) => {
     setCategorias((prev) =>
@@ -54,11 +71,12 @@ export default function EditarCardapio() {
   };
 
   const atualizarItem = (catId, index, campo, valor) => {
+    const convertido = campo === 'preco' ? valor.replace(',', '.') : valor;
     setCategorias((prev) =>
       prev.map((cat) => {
         if (cat.id === catId) {
           const novosItens = [...cat.itens];
-          novosItens[index][campo] = valor;
+          novosItens[index][campo] = convertido;
           return { ...cat, itens: novosItens };
         }
         return cat;
@@ -66,18 +84,60 @@ export default function EditarCardapio() {
     );
   };
 
-  const excluirCategoria = (catId) => {
+  const excluirCategoria = async (catId) => {
+  try {
+    const resposta = await fetch(`${CARDAPIO_URL}/${catId}`, {
+      method: 'DELETE',
+    });
+
+    const json = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(json.erro || 'Erro ao excluir categoria');
+    }
+
+    // Remove da tela após exclusão
     setCategorias((prev) => prev.filter((cat) => cat.id !== catId));
-  };
+
+    Toast.show('Categoria excluída com sucesso!', {
+      duration: Toast.durations.SHORT,
+      position: Toast.positions.BOTTOM,
+    });
+  } catch (e) {
+    console.log('❌ Erro ao excluir categoria:', e);
+    Toast.show('Erro ao excluir categoria do banco', {
+      duration: Toast.durations.LONG,
+      position: Toast.positions.BOTTOM,
+    });
+  }
+};
+
 
   const salvarCardapio = async () => {
-    try {
-      await AsyncStorage.setItem('cardapio', JSON.stringify(categorias));
-      alert('Cardápio salvo com sucesso!');
-    } catch (e) {
-      console.log('Erro ao salvar cardápio:', e);
-    }
-  };
+  try {
+    const resposta = await fetch(CARDAPIO_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ categorias }), // já envia várias se quiser
+    });
+
+    const json = await resposta.json();
+
+    if (!resposta.ok) throw new Error(json.erro || 'Erro desconhecido');
+
+    Toast.show('Categorias salvas com sucesso!', {
+      duration: Toast.durations.SHORT,
+      position: Toast.positions.BOTTOM,
+    });
+  } catch (e) {
+    console.log('❌ Erro ao salvar categorias:', e);
+    Toast.show('Erro ao salvar categorias', {
+      duration: Toast.durations.LONG,
+      position: Toast.positions.BOTTOM,
+    });
+  }
+};
+
 
   return (
     <ImageBackground
@@ -102,14 +162,14 @@ export default function EditarCardapio() {
         </View>
 
         <ScrollView contentContainerStyle={{ padding: 16 }}>
-          {categorias.map((cat, i) => (
+          {categorias.map((cat) => (
             <View key={cat.id} style={styles.card}>
               <TextInput
                 placeholder="Nome da Categoria"
                 placeholderTextColor="#999"
                 style={styles.input}
                 value={cat.nome}
-                onChangeText={(text) => atualizarCategoria(cat.id, 'nome', text)}
+                onChangeText={(text) => atualizarCategoria(cat.id || cat.id, 'nome', text)}
               />
               {cat.itens.map((item, index) => (
                 <View key={index} style={styles.itemLinha}>
@@ -125,7 +185,7 @@ export default function EditarCardapio() {
                     placeholderTextColor="#999"
                     keyboardType="numeric"
                     style={[styles.input, { width: 80 }]}
-                    value={item.preco}
+                    value={item.preco.toString()}
                     onChangeText={(text) => atualizarItem(cat.id, index, 'preco', text)}
                   />
                 </View>
