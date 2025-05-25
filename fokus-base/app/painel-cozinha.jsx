@@ -2,6 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
+import { PEDIDO_GET_URL } from './utils/config';
+
+
 import {
   View,
   Text,
@@ -21,15 +24,22 @@ export default function PainelCozinha() {
 
   useEffect(() => {
   const carregarDados = async () => {
-    const dadosPedidos = await AsyncStorage.getItem('todosPedidos');
-    const dadosReservas = await AsyncStorage.getItem('todasReservas');
+    try {
+      const resPedidos = await fetch(PEDIDO_GET_URL);
+      const jsonPedidos = await resPedidos.json();
+      setPedidos(jsonPedidos); // agora pega direto do MongoDB
 
-    if (dadosPedidos) setPedidos(JSON.parse(dadosPedidos));
-    if (dadosReservas) setReservas(JSON.parse(dadosReservas));
+      const dadosReservas = await AsyncStorage.getItem('todasReservas');
+      if (dadosReservas) setReservas(JSON.parse(dadosReservas));
+    } catch (e) {
+      console.log('❌ Erro ao buscar dados:', e);
+    }
   };
 
   carregarDados();
 }, []);
+
+
 
 
   const atualizarStatus = async (index, novoStatus) => {
