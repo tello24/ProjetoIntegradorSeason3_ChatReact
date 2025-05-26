@@ -35,7 +35,6 @@ export default function Index() {
     return;
   }
   if (perfil === 'professor' && !email.endsWith('@sistemapoliedro.com.br')) {
-    Alert.alert('Erro', 'Email de professor deve terminar com @sistemapoliedro.com.br');
     return;
   }
   if (perfil === 'restaurante' && email !== 'cozinha@gmail.com') {
@@ -67,14 +66,15 @@ export default function Index() {
 
       // Roteamento conforme perfil vindo do backend
 if (json.perfil === 'restaurante') {
+  await AsyncStorage.setItem('perfil', 'restaurante');
   router.replace('/painel-cozinha');
 } else if (json.perfil === 'aluno') {
+  await AsyncStorage.setItem('perfil', 'aluno');
   await AsyncStorage.setItem('ra', json.ra || '');
   router.replace('/chat-aluno');
 } else if (json.perfil === 'professor') {
-  Alert.alert('Área restrita', 'Login de professor ainda não está disponível.');
-} else {
-  Alert.alert('Erro', 'Perfil não reconhecido.');
+  await AsyncStorage.setItem('perfil', 'professor');
+  router.replace('/chat-aluno');
 }
 
 
