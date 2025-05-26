@@ -104,7 +104,7 @@ const excluirReserva = async (index) => {
         </View>
 
         <ScrollView contentContainerStyle={styles.conteudo}>
-          <Text style={styles.subtitulo}>📋 Reservas</Text>
+          {/* <Text style={styles.subtitulo}></Text> */}
           {reservas.map((res, index) => (
   <View key={index} style={styles.card}>
     <Text>👤 {res.nome}</Text>
@@ -124,7 +124,11 @@ const excluirReserva = async (index) => {
           <Text style={styles.subtitulo}>🛒 Pedidos</Text>
           {pedidos.map((ped, index) => (
             <View key={index} style={styles.card}>
-              <Text>👤 {ped.nome} (RA: {ped.ra})</Text>
+              <Text>
+            👤 {ped.nome}
+            {ped.ra ? ` (RA: ${ped.ra})` : ''}
+              </Text>
+
               <Text>🍽️ {ped.item} (x{ped.quantidade})</Text>
               <Text>🥤 Bebida: {ped.bebida || 'Nenhuma selecionada'}</Text>
               <Text>📝 {ped.obs || 'Sem observações'}</Text>
