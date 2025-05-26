@@ -169,31 +169,31 @@ app.delete('/pedidos/:id', async (req, res) => {
   res.json({ mensagem: 'Pedido excluído' });
 });
 
-// Salvar reserva
-app.post('/reserva', async (req, res) => {
-  const nova = new Reserva(req.body);
-  await nova.save();
-  res.status(201).json({ mensagem: 'Reserva salva' });
-});
+// // Salvar reserva
+// app.post('/reserva', async (req, res) => {
+//   const nova = new Reserva(req.body);
+//   await nova.save();
+//   res.status(201).json({ mensagem: 'Reserva salva' });
+// });
 
-// Buscar reservas
-app.get('/reservas', async (_, res) => {
-  const reservas = await Reserva.find();
-  res.json(reservas);
-});
+// // Buscar reservas
+// app.get('/reservas', async (_, res) => {
+//   const reservas = await Reserva.find();
+//   res.json(reservas);
+// });
 
-// Deletar reserva
-app.delete('/reservas/:id', async (req, res) => {
-  const { id } = req.params;
-  await Reserva.findByIdAndDelete(id);
-  res.json({ mensagem: 'Reserva excluída' });
-});
+// // Deletar reserva
+// app.delete('/reservas/:id', async (req, res) => {
+//   const { id } = req.params;
+//   await Reserva.findByIdAndDelete(id);
+//   res.json({ mensagem: 'Reserva excluída' });
+// });
 
 // Buscar todas as categorias
 app.get('/cardapio', async (req, res) => {
   try {
     const categorias = await Categoria.find();
-    res.json(categorias);
+    res.json({ categorias }); // <<< ALTERAÇÃO AQUI
   } catch (e) {
     console.error('Erro ao buscar cardápio:', e);
     res.status(500).json({ erro: 'Erro ao buscar cardápio' });
