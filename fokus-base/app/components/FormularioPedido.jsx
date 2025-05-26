@@ -19,30 +19,46 @@ export default function FormularioPedido({ onConfirmar, pedidoInicial = {} }) {
   const [querBebida, setQuerBebida] = useState(pedidoInicial.bebida ? true : false);
   const [bebida, setBebida] = useState(pedidoInicial.bebida || '');
   const [cardapio, setCardapio] = useState([]);
+  const [perfil, setPerfil] = useState(''); // 'aluno' ou 'professor'
+
 
   const opcoesBebida = ['Água', 'Coca Cola', 'Coca Cola Zero', 'Suco'];
 
 useEffect(() => {
   const carregarCardapio = async () => {
-    try {
-      const res = await fetch(CARDAPIO_URL);
-      const data = await res.json();
+  try {
+    const res = await fetch(CARDAPIO_URL);
+    const data = await res.json();
 
-      // Se data for um array, ótimo — use direto
-      if (Array.isArray(data)) {
-        const todosItens = data.flatMap(cat => cat.itens || []);
-        setCardapio(todosItens);
-      } else if (Array.isArray(data.categorias)) {
-        const todosItens = data.categorias.flatMap(cat => cat.itens || []);
-        setCardapio(todosItens);
-      } else {
-        setCardapio([]); // fallback seguro
-      }
-    } catch (err) {
-      console.error('❌ Erro ao carregar cardápio:', err);
-      setCardapio([]); // limpa para não quebrar render
+    let todosItens = [];
+
+    if (Array.isArray(data)) {
+      todosItens = data.flatMap(cat => cat.itens || []);
+    } else if (Array.isArray(data.categorias)) {
+      todosItens = data.categorias.flatMap(cat => cat.itens || []);
     }
-  };
+
+    setCardapio(todosItens);
+
+    // 🔁 Se estiver editando um pedido
+    if (pedidoInicial.item && typeof pedidoInicial.item === 'string') {
+      const encontrado = todosItens.find(i => i.nome === pedidoInicial.item);
+      if (encontrado) setItem(encontrado);
+    }
+
+  } catch (err) {
+    console.error('❌ Erro ao carregar cardápio:', err);
+    setCardapio([]);
+  }
+
+  // ✅ Carregar RA e perfil
+  const raSalvo = await AsyncStorage.getItem('ra');
+  if (raSalvo) setRA(raSalvo);
+
+  const perfilSalvo = await AsyncStorage.getItem('perfil');
+  if (perfilSalvo) setPerfil(perfilSalvo);
+};
+
 
   const carregarRA = async () => {
     const raSalvo = await AsyncStorage.getItem('ra');
@@ -64,6 +80,11 @@ useEffect(() => {
   };
 
   const confirmar = async () => {
+    
+    const itemSelecionado = typeof item === 'string'
+  ? cardapio.find(i => i.nome === item)
+  : item;
+
   if (!nome || !ra || !item?.nome || quantidade < 1) {
     alert('Por favor, preencha todos os campos obrigatórios!');
     return;
@@ -95,23 +116,27 @@ useEffect(() => {
 
   // 👉 Envia para o backend
   try {
-    await fetch(PEDIDO_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nome,
-        ra,
-        item: item.nome,
-        quantidade: quantidade.toString(),
-        obs,
-        bebida: querBebida ? bebida : null,
-        status: 'Pendente',
-        dataHora: new Date().toLocaleString('pt-BR'),
-      }),
-    });
-  } catch (err) {
-    console.error('❌ Erro ao salvar pedido no banco:', err);
-  }
+  const response = await fetch(PEDIDO_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nome,
+      ra,
+      item: itemSelecionado.nome,
+      quantidade: quantidade.toString(),
+      obs,
+      bebida: querBebida ? bebida : null,
+    }),
+  });
+
+  const json = await response.json();
+  console.log('✅ Resposta do backend:', json);
+
+  if (!response.ok) throw new Error(json.erro || 'Erro ao salvar pedido');
+} catch (err) {
+  console.error('❌ Erro no fetch:', err);
+}
+
 
   // 👇 Isso ainda exibe o balão no chat normalmente
   onConfirmar({
@@ -167,6 +192,7 @@ useEffect(() => {
 
       <TextInput placeholder="Observações" style={styles.input} value={obs} onChangeText={setObs} placeholderTextColor="#888" />
 
+      <Text style={styles.titulo}>Deseja uma bebida?</Text>
       <View style={styles.opcoesLinha}>
         <TouchableOpacity style={[styles.opcaoBotao, querBebida && styles.verdeSelecionado]} onPress={() => setQuerBebida(true)}>
           <Text style={[styles.opcaoTexto, querBebida && styles.textoSelecionadoClaro]}>Sim</Text>
