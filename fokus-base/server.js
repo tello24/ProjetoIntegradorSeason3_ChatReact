@@ -24,7 +24,7 @@ const usuarioSchema = new mongoose.Schema({
 const Usuario = mongoose.model('Usuario', usuarioSchema);
 
 const pedidoSchema = new mongoose.Schema({
-  ra: String,
+  ra: { type: String, default: '' },
   nome: String,
   item: String,
   quantidade: Number,
@@ -133,14 +133,6 @@ app.post('/login', async (req, res) => {
   res.json({ perfil: user.perfil, ra: user.ra });
 });
 
-
-// Salvar pedido
-app.post('/pedido', async (req, res) => {
-  const novo = new Pedido({ ...req.body, status: 'Pendente', dataHora: new Date().toLocaleString('pt-BR') });
-  await novo.save();
-  res.status(201).json({ mensagem: 'Pedido salvo' });
-});
-
 // Buscar pedidos
 app.post('/pedido', async (req, res) => {
    console.log('📥 Novo pedido recebido:', req.body);
@@ -152,6 +144,18 @@ app.post('/pedido', async (req, res) => {
   await novo.save();
   res.status(201).json({ mensagem: 'Pedido salvo' });
 });
+
+// Buscar todos os pedidos
+app.get('/pedido', async (req, res) => {
+  try {
+    const pedidos = await Pedido.find();
+    res.json(pedidos);
+  } catch (err) {
+    console.error('❌ Erro ao buscar pedidos:', e);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos' });
+  }
+});
+
 
 
 // Atualizar status do pedido
