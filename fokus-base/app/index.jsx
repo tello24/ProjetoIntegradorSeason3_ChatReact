@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LOGIN_URL } from './utils/config';
+import Toast from 'react-native-root-toast';
+
 import {
   View,
   Text,
@@ -42,47 +44,58 @@ export default function Index() {
     return;
   }
 
-    try {
-      const resposta = await fetch(LOGIN_URL, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email, senha }),
-});
+    
+  try {
+    const resposta = await fetch(LOGIN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha }),
+    });
 
-      const json = await resposta.json();
-      console.log('🔵 Resposta do backend:', json);
+    const json = await resposta.json();
+    console.log('🔵 Resposta do backend:', json);
 
-      if (!resposta.ok) {
-  if (json.erro === 'Usuário não encontrado') {
-    Alert.alert('Erro', 'E-mail não encontrado. Verifique e tente novamente.');
-  } else if (json.erro === 'Senha incorreta') {
-    Alert.alert('Erro', 'Senha incorreta. Tente novamente.');
-  } else {
-    Alert.alert('Erro', json.erro || 'Erro no login.');
-  }
-  return;
-}
-
-
-      // Roteamento conforme perfil vindo do backend
-if (json.perfil === 'restaurante') {
-  await AsyncStorage.setItem('perfil', 'restaurante');
-  router.replace('/painel-cozinha');
-} else if (json.perfil === 'aluno') {
-  await AsyncStorage.setItem('perfil', 'aluno');
-  await AsyncStorage.setItem('ra', json.ra || '');
-  router.replace('/chat-aluno');
-} else if (json.perfil === 'professor') {
-  await AsyncStorage.setItem('perfil', 'professor');
-  router.replace('/chat-aluno');
-}
-
-
-    } catch (erro) {
-      console.error('Erro no login:', erro);
-      Alert.alert('Erro', 'Não foi possível conectar com o servidor.');
+    if (!resposta.ok) {
+      if (json.erro === 'Usuário não encontrado') {
+        Toast.show('E-mail não encontrado. Verifique e tente novamente.', {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+        });
+      } else if (json.erro === 'Senha incorreta') {
+        Toast.show('Senha incorreta. Tente novamente.', {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+        });
+      } else {
+        Toast.show(json.erro || 'Erro no login.', {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+        });
+      }
+      return;
     }
-  };
+
+    // Roteamento por perfil
+    if (json.perfil === 'restaurante') {
+      await AsyncStorage.setItem('perfil', 'restaurante');
+      router.replace('/painel-cozinha');
+    } else if (json.perfil === 'aluno') {
+      await AsyncStorage.setItem('perfil', 'aluno');
+      await AsyncStorage.setItem('ra', json.ra || '');
+      router.replace('/chat-aluno');
+    } else if (json.perfil === 'professor') {
+      await AsyncStorage.setItem('perfil', 'professor');
+      router.replace('/chat-aluno');
+    }
+
+  } catch (erro) {
+    console.error('❌ Erro ao tentar login:', erro);
+    Toast.show('Erro de conexão com o servidor.', {
+      duration: Toast.durations.SHORT,
+      position: Toast.positions.BOTTOM,
+    });
+  }
+};
 
   return (
     <ImageBackground

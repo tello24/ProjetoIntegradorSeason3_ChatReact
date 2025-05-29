@@ -21,25 +21,50 @@ export default function EditarCardapio() {
 
   // Carrega o cardápio do banco ao abrir a tela
   useEffect(() => {
-    const carregar = async () => {
-      try {
-        const resposta = await fetch(CARDAPIO_URL);
-        const json = await resposta.json();
-        if (json?.categorias) setCategorias(json.categorias);
-      } catch (e) {
-        console.log('❌ Erro ao carregar cardápio:', e);
+  const carregar = async () => {
+    try {
+      const resposta = await fetch(CARDAPIO_URL);
+      const json = await resposta.json();
+
+      if (json?.categorias) {
+        const formatadas = json.categorias.map((cat) => ({
+          ...cat,
+          id: cat._id, // <== converte _id em id
+          itens: cat.itens.map((item) => ({
+            ...item,
+            id: item.id || Date.now().toString() + Math.random(), // garante id único nos itens
+          })),
+        }));
+
+        setCategorias(formatadas);
       }
-    };
-    carregar();
-  }, []);
+    } catch (e) {
+      console.log('❌ Erro ao carregar cardápio:', e);
+    }
+  };
+
+  carregar();
+}, []);
+
 
   const adicionarCategoria = () => {
-  const novoId = Date.now().toString(); 
+  const novoId = Date.now().toString();
   setCategorias((prev) => [
     ...prev,
-    { id: novoId, nome: '', itens: [{ nome: '', preco: '' }] },
+    {
+      id: novoId,
+      nome: '',
+      itens: [
+        {
+          id: Date.now().toString() + Math.random(), // item único
+          nome: '',
+          preco: ''
+        }
+      ],
+    },
   ]);
 };
+
 
 
   const atualizarCategoria = (id, campo, valor) => {
@@ -49,14 +74,25 @@ export default function EditarCardapio() {
   };
 
   const adicionarItem = (catId) => {
-    setCategorias((prev) =>
-      prev.map((cat) =>
-        cat.id === catId
-          ? { ...cat, itens: [...cat.itens, { nome: '', preco: '' }] }
-          : cat
-      )
-    );
-  };
+  setCategorias((prev) =>
+    prev.map((cat) =>
+      cat.id === catId
+        ? {
+            ...cat,
+            itens: [
+              ...cat.itens,
+              {
+                id: Date.now().toString() + Math.random(), // item novo independente
+                nome: '',
+                preco: ''
+              },
+            ],
+          }
+        : cat
+    )
+  );
+};
+
 
   const removerUltimoItem = (catId) => {
     setCategorias((prev) =>
@@ -70,19 +106,24 @@ export default function EditarCardapio() {
     );
   };
 
-  const atualizarItem = (catId, index, campo, valor) => {
-    const convertido = campo === 'preco' ? valor.replace(',', '.') : valor;
-    setCategorias((prev) =>
-      prev.map((cat) => {
-        if (cat.id === catId) {
-          const novosItens = [...cat.itens];
-          novosItens[index][campo] = convertido;
-          return { ...cat, itens: novosItens };
-        }
-        return cat;
-      })
-    );
-  };
+  // Substitua a função `atualizarItem` pela versão corrigida:
+const atualizarItem = (catId, index, campo, valor) => {
+  const convertido = campo === 'preco' ? valor.replace(',', '.') : valor;
+
+  setCategorias((prev) =>
+    prev.map((cat) => {
+      if (cat.id !== catId) return cat;
+
+      // Corrige para clonar cada item individualmente
+      const novosItens = cat.itens.map((it, i) =>
+        i === index ? { ...it, [campo]: convertido } : { ...it }
+      );
+
+      return { ...cat, itens: novosItens };
+    })
+  );
+};
+
 
   const excluirCategoria = async (catId) => {
   try {
@@ -172,24 +213,25 @@ export default function EditarCardapio() {
                 onChangeText={(text) => atualizarCategoria(cat.id || cat.id, 'nome', text)}
               />
               {cat.itens.map((item, index) => (
-                <View key={index} style={styles.itemLinha}>
-                  <TextInput
-                    placeholder="Nome do Prato"
-                    placeholderTextColor="#999"
-                    style={[styles.input, { flex: 1, marginRight: 8 }]}
-                    value={item.nome}
-                    onChangeText={(text) => atualizarItem(cat.id, index, 'nome', text)}
-                  />
-                  <TextInput
-                    placeholder="Preço"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    style={[styles.input, { width: 80 }]}
-                    value={item.preco.toString()}
-                    onChangeText={(text) => atualizarItem(cat.id, index, 'preco', text)}
-                  />
-                </View>
-              ))}
+  <View key={item.id} style={styles.itemLinha}>
+    <TextInput
+      placeholder="Nome do Prato"
+      placeholderTextColor="#999"
+      style={[styles.input, { flex: 1, marginRight: 8 }]}
+      value={item.nome}
+      onChangeText={(text) => atualizarItem(cat.id, index, 'nome', text)}
+    />
+    <TextInput
+      placeholder="Preço"
+      placeholderTextColor="#999"
+      keyboardType="numeric"
+      style={[styles.input, { width: 80 }]}
+      value={item.preco.toString()}
+      onChangeText={(text) => atualizarItem(cat.id, index, 'preco', text)}
+    />
+  </View>
+))}
+
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TouchableOpacity onPress={() => adicionarItem(cat.id)} style={styles.adicionarItem}>
                   <Text style={styles.adicionarTexto}>+ Item</Text>
