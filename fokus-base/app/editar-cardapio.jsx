@@ -126,31 +126,31 @@ const atualizarItem = (catId, index, campo, valor) => {
 
 
   const excluirCategoria = async (catId) => {
-    try {
-        const resposta = await fetch(`${CARDAPIO_URL}/${catId}`, {
-            method: 'DELETE',
-        });
+  try {
+    const resposta = await fetch(`${CARDAPIO_URL}/${catId}`, {
+      method: 'DELETE',
+    });
 
-        const json = await resposta.json();
+    const json = await resposta.json();
 
-        if (!resposta.ok) {
-            throw new Error(json.erro || 'Erro ao excluir categoria do banco');
-        }
-
-        // Remove da tela após exclusão
-        setCategorias((prev) => prev.filter((cat) => cat.id !== catId));
-
-        Toast.show('Categoria e pratos associados excluídos com sucesso!', {
-            duration: Toast.durations.SHORT,
-            position: Toast.positions.BOTTOM,
-        });
-    } catch (e) {
-        console.log('Erro ao excluir categoria:', e);
-        Toast.show('Erro ao excluir categoria do banco', {
-            duration: Toast.durations.LONG,
-            position: Toast.positions.BOTTOM,
-        });
+    if (!resposta.ok) {
+      throw new Error(json.erro || 'Erro ao excluir categoria');
     }
+
+    // Remove da tela após exclusão
+    setCategorias((prev) => prev.filter((cat) => cat.id !== catId));
+
+    Toast.show('Categoria excluída com sucesso!', {
+      duration: Toast.durations.SHORT,
+      position: Toast.positions.BOTTOM,
+    });
+  } catch (e) {
+    console.log('❌ Erro ao excluir categoria:', e);
+    Toast.show('Erro ao excluir categoria do banco', {
+      duration: Toast.durations.LONG,
+      position: Toast.positions.BOTTOM,
+    });
+  }
 };
 
 
