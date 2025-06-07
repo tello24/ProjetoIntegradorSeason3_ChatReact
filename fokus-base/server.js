@@ -234,22 +234,18 @@ app.post('/cardapio', async (req, res) => {
 
 
 app.delete('/cardapio/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        const categoria = await Categoria.findById(id);
-        if (!categoria) {
-            return res.status(404).json({ erro: 'Categoria não encontrada' });
-        }
+  const { id } = req.params;
 
-        await Categoria.findByIdAndDelete(id);
-        // Excluir pratos associados
-        await Prato.deleteMany({ categoriaId: id }); // Assumindo que a relação é baseada no campo `categoriaId`
-
-        res.json({ mensagem: 'Categoria e pratos associados excluídos com sucesso!' });
-    } catch (e) {
-        console.error('Erro ao excluir categoria:', e);
-        res.status(500).json({ erro: 'Erro ao excluir categoria' });
+  try {
+    const categoria = await Categoria.findByIdAndDelete(id);
+    if (!categoria) {
+      return res.status(404).json({ erro: 'Categoria não encontrada' });
     }
+    res.json({ mensagem: 'Categoria excluída com sucesso!' });
+  } catch (e) {
+    console.error('❌ Erro ao excluir categoria:', e);
+    res.status(500).json({ erro: 'Erro ao excluir categoria' });
+  }
 });
 
 
