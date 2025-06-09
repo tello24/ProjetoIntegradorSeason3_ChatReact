@@ -57,12 +57,12 @@ export default function Index() {
 
     if (!resposta.ok) {
       if (json.erro === 'Usuário não encontrado') {
-        Toast.show('E-mail não encontrado. Verifique e tente novamente.', {
+        Toast.show('Senha ou email incorrreto. Tente novamente.', {
           duration: Toast.durations.SHORT,
           position: Toast.positions.BOTTOM,
         });
       } else if (json.erro === 'Senha incorreta') {
-        Toast.show('Senha incorreta. Tente novamente.', {
+        Toast.show('Senha ou email incorrreto. Tente novamente.', {
           duration: Toast.durations.SHORT,
           position: Toast.positions.BOTTOM,
         });
