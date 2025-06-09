@@ -140,14 +140,16 @@ useEffect(() => {
 
   // 👇 Isso ainda exibe o balão no chat normalmente
   onConfirmar({
-    nome,
-    ra,
-    item: item.nome,
-    quantidade: quantidade.toString(),
-    obs,
-    bebida: querBebida ? bebida : null,
-    resumo,
-  });
+  nome,
+  ra,
+  item: item.nome,
+  quantidade: quantidade.toString(),
+  obs,
+  bebida: querBebida ? bebida : null,
+  resumo,
+  criadoEm: new Date().toISOString(), // ⏱️ campo de criação
+});
+
 };
 
 
