@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Toast from 'react-native-root-toast';
 import { CARDAPIO_URL } from './utils/config';
+import { MaterialIcons } from '@expo/vector-icons';
 import {
   View,
   Text,
@@ -47,6 +48,30 @@ export default function EditarCardapio() {
 
   carregar();
 }, []);
+
+const carregarCardapio = async () => {
+  try {
+    const resposta = await fetch(CARDAPIO_URL);
+    const json = await resposta.json();
+
+    if (json?.categorias) {
+      const formatadas = json.categorias.map((cat) => ({
+        ...cat,
+        id: cat._id,
+        _id: cat._id,
+        itens: cat.itens.map((item) => ({
+          ...item,
+          id: item._id || Date.now().toString() + Math.random(),
+          _id: item._id,
+        })),
+      }));
+      setCategorias(formatadas);
+    }
+  } catch (e) {
+    console.log('❌ Erro ao carregar cardápio:', e);
+  }
+};
+
 
 
   const adicionarCategoria = () => {
@@ -259,11 +284,18 @@ const atualizarItem = (catId, index, campo, valor) => {
             <TouchableOpacity onPress={() => router.replace('/painel-cozinha')} style={styles.botaoTopo}>
               <Text style={styles.botaoTexto}>Voltar Painel</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.replace('/')} style={styles.botaoTopo}>
+            
+
+      <TouchableOpacity onPress={() => router.replace('/')} style={styles.botaoTopo}>
               <Text style={styles.botaoTexto}>Logout</Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={carregarCardapio} style={styles.botaoRecarregar}>
+  <MaterialIcons name="refresh" size={24} color="#fff" />
+</TouchableOpacity>
+
           </View>
         </View>
+        
 
         <ScrollView contentContainerStyle={{ padding: 16 }}>
           {categorias.map((cat) => (
@@ -395,6 +427,15 @@ textoBotaoExcluirItem: {
   fontWeight: 'bold',
   fontSize: 16,
   lineHeight: 20,
+},
+
+botaoRecarregar: {
+  
+ borderColor: '#FFF',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 3,
+    alignItems: 'center',
 },
 
 });
