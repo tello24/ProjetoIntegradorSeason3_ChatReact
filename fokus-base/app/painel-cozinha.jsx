@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { PEDIDO_GET_URL } from './utils/config';
+import { MaterialIcons } from '@expo/vector-icons';
 
 
 import {
@@ -22,7 +23,22 @@ export default function PainelCozinha() {
   const [pedidos, setPedidos] = useState([]);
   const [reservas, setReservas] = useState([]);
 
+  const carregarPedidos = async () => {
+  try {
+    const resPedidos = await fetch(PEDIDO_GET_URL);
+    const jsonPedidos = await resPedidos.json();
+    setPedidos(jsonPedidos);
+
+    const dadosReservas = await AsyncStorage.getItem('todasReservas');
+    if (dadosReservas) setReservas(JSON.parse(dadosReservas));
+  } catch (e) {
+    console.log('❌ Erro ao carregar dados da cozinha:', e);
+  }
+};
+
+
   useEffect(() => {
+    carregarPedidos();
   const carregarDados = async () => {
     try {
       const resPedidos = await fetch(PEDIDO_GET_URL);
@@ -100,6 +116,10 @@ const excluirReserva = async (index) => {
             <TouchableOpacity style={styles.botaoTopo} onPress={() => router.replace('/')}> 
               <Text style={styles.textoBotaoTopo}>Logout</Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={carregarPedidos} style={styles.botaoRecarregar}>
+  <MaterialIcons name="refresh" size={24} color="#fff" />
+</TouchableOpacity>
+
           </View>
         </View>
 
@@ -233,4 +253,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
+  botaoRecarregar: {
+  borderColor: '#FFF',
+  borderWidth: 1,
+  borderRadius: 8,
+  paddingVertical: 3,
+  alignItems: 'center',
+},
+
 });
