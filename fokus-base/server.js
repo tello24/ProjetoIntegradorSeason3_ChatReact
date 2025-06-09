@@ -35,16 +35,16 @@ const pedidoSchema = new mongoose.Schema({
 });
 const Pedido = mongoose.model('Pedido', pedidoSchema);
 
-const reservaSchema = new mongoose.Schema({
-  ra: String,
-  nome: String,
-  data: String,
-  horario: String,
-  pessoas: String,
-  telefone: String,
-  obs: String,
-});
-const Reserva = mongoose.model('Reserva', reservaSchema);
+// const reservaSchema = new mongoose.Schema({
+//   ra: String,
+//   nome: String,
+//   data: String,
+//   horario: String,
+//   pessoas: String,
+//   telefone: String,
+//   obs: String,
+// });
+// const Reserva = mongoose.model('Reserva', reservaSchema);
 
 const categoriaSchema = new mongoose.Schema({
   nome: String,
