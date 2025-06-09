@@ -27,17 +27,19 @@ export default function EditarCardapio() {
       const json = await resposta.json();
 
       if (json?.categorias) {
-        const formatadas = json.categorias.map((cat) => ({
-          ...cat,
-          id: cat._id, // <== converte _id em id
-          itens: cat.itens.map((item) => ({
-            ...item,
-            id: item.id || Date.now().toString() + Math.random(), // garante id único nos itens
-          })),
-        }));
+  const formatadas = json.categorias.map((cat) => ({
+    ...cat,
+    id: cat._id,     // garante `cat.id`
+    _id: cat._id,    // garante `cat._id`
+    itens: cat.itens.map((item) => ({
+      ...item,
+      id: item._id || Date.now().toString() + Math.random(),
+      _id: item._id,
+    })),
+  }));
+  setCategorias(formatadas);
+}
 
-        setCategorias(formatadas);
-      }
     } catch (e) {
       console.log('❌ Erro ao carregar cardápio:', e);
     }
@@ -93,6 +95,46 @@ export default function EditarCardapio() {
   );
 };
 
+const excluirItem = async (catId, itemId) => {
+  if (!catId || !itemId) {
+    console.error('❌ ID indefinido:', { catId, itemId });
+    return;
+  }
+  try {
+    const resposta = await fetch(`${CARDAPIO_URL}/item/${catId}/${itemId}`, {
+      method: 'DELETE',
+    });
+
+    const json = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(json.erro || 'Erro ao excluir item');
+    }
+
+    // Atualiza a interface removendo o item
+    setCategorias((prev) =>
+      prev.map((cat) =>
+        cat.id === catId
+  ? { ...cat, itens: cat.itens.filter((item) => item._id?.toString() !== itemId) }
+
+          : cat
+      )
+    );
+
+    Toast.show('❌ Item excluído com sucesso!', {
+      duration: Toast.durations.SHORT,
+      position: Toast.positions.BOTTOM,
+    });
+  } catch (e) {
+    console.log('❌ Erro ao excluir item:', e);
+    Toast.show('Erro ao excluir item do banco', {
+      duration: Toast.durations.LONG,
+      position: Toast.positions.BOTTOM,
+    });
+  }
+};
+
+
 
   const removerUltimoItem = (catId) => {
     setCategorias((prev) =>
@@ -125,28 +167,32 @@ const atualizarItem = (catId, index, campo, valor) => {
 };
 
 
-  const excluirCategoria = async (catId) => {
+ const excluirCategoria = async (catId) => {
   try {
+    console.log('🟡 Tentando excluir categoria com ID:', catId);
+
     const resposta = await fetch(`${CARDAPIO_URL}/${catId}`, {
       method: 'DELETE',
     });
 
-    const json = await resposta.json();
-
     if (!resposta.ok) {
-      throw new Error(json.erro || 'Erro ao excluir categoria');
+      const texto = await resposta.text(); // loga o erro HTML bruto
+      console.log('🔴 Erro bruto do backend:', texto);
+      throw new Error('Erro ao excluir categoria');
     }
 
-    // Remove da tela após exclusão
-    setCategorias((prev) => prev.filter((cat) => cat.id !== catId));
+    const json = await resposta.json();
 
-    Toast.show('Categoria excluída com sucesso!', {
+    // Remove do estado
+    setCategorias((prev) => prev.filter((cat) => cat._id !== catId));
+
+    Toast.show('✅ Categoria excluída com sucesso!', {
       duration: Toast.durations.SHORT,
       position: Toast.positions.BOTTOM,
     });
   } catch (e) {
     console.log('❌ Erro ao excluir categoria:', e);
-    Toast.show('Erro ao excluir categoria do banco', {
+    Toast.show('❌ Erro ao excluir categoria do banco', {
       duration: Toast.durations.LONG,
       position: Toast.positions.BOTTOM,
     });
@@ -154,17 +200,33 @@ const atualizarItem = (catId, index, campo, valor) => {
 };
 
 
+
   const salvarCardapio = async () => {
   try {
     const resposta = await fetch(CARDAPIO_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ categorias }), // já envia várias se quiser
+      body: JSON.stringify({ categorias }),
     });
 
     const json = await resposta.json();
 
     if (!resposta.ok) throw new Error(json.erro || 'Erro desconhecido');
+
+    // 🔄 Atualiza o estado com o que veio do backend (já com os _id certos)
+    if (json.categorias) {
+      const formatadas = json.categorias.map((cat) => ({
+        ...cat,
+        id: cat._id,
+        _id: cat._id,
+        itens: cat.itens.map((item) => ({
+          ...item,
+          id: item._id,
+          _id: item._id,
+        })),
+      }));
+      setCategorias(formatadas);
+    }
 
     Toast.show('Categorias salvas com sucesso!', {
       duration: Toast.durations.SHORT,
@@ -178,6 +240,7 @@ const atualizarItem = (catId, index, campo, valor) => {
     });
   }
 };
+
 
 
   return (
@@ -229,6 +292,14 @@ const atualizarItem = (catId, index, campo, valor) => {
       value={item.preco.toString()}
       onChangeText={(text) => atualizarItem(cat.id, index, 'preco', text)}
     />
+    <TouchableOpacity
+  onPress={() => excluirItem(cat._id, item._id)}
+  style={styles.botaoExcluirItem}
+>
+  <Text style={styles.textoBotaoExcluirItem}>×</Text>
+</TouchableOpacity>
+
+
   </View>
 ))}
 
@@ -241,9 +312,11 @@ const atualizarItem = (catId, index, campo, valor) => {
                 </TouchableOpacity>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <TouchableOpacity onPress={() => excluirCategoria(cat.id)} style={styles.excluirCategoria}>
-                  <Text style={styles.cancelarTexto}>Excluir Categoria</Text>
-                </TouchableOpacity>
+                <TouchableOpacity onPress={() => excluirCategoria(cat._id)} style={styles.excluirCategoria}>
+  <Text style={styles.cancelarTexto}>Excluir Categoria</Text>
+</TouchableOpacity>
+
+
                 <TouchableOpacity onPress={salvarCardapio} style={styles.salvarBtn}>
                   <Text style={styles.salvarTexto}>Salvar Cardápio</Text>
                 </TouchableOpacity>
@@ -305,4 +378,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
+
+  botaoExcluirItem: {
+  backgroundColor: '#e74c3c',
+  borderRadius: 50,
+  width: 35,
+  height: 35,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginLeft: 4,
+  shadowColor: '#000',
+},
+
+textoBotaoExcluirItem: {
+  color: '#fff',
+  fontWeight: 'bold',
+  fontSize: 16,
+  lineHeight: 20,
+},
+
 });
