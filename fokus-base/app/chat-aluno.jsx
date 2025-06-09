@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CARDAPIO_URL } from './utils/config';
+import BalaoPedidoComTempo from './components/BalaoPedidoComTempo';
 import {
   StyleSheet,
   Text,
@@ -18,7 +19,7 @@ import {
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import FormularioReserva from './components/FormularioReserva';
+// import FormularioReserva from './components/FormularioReserva';
 import FormularioPedido from './components/FormularioPedido';
 
 
@@ -44,12 +45,13 @@ const AnimatedBalao = ({ style, children }) => {
 export default function Index() {
   const [hovered, setHovered] = useState(null);
   const esperandoConfirmacao = useRef(null);
+  const dataHoraCriacao = new Date().toISOString();
   const [mensagem, setMensagem] = useState('');
   const [conversas, setConversas] = useState([
     { id: '1', texto: '🍽️ Bem-vindo ao Restaurante Poliedro!', de: 'bot' },
     { id: '2', texto: 'Como posso ajudar? Use os botões rápidos ou digite sua dúvida.', de: 'bot' },
   ]);
-  const [ultimaReserva, setUltimaReserva] = useState(null);
+  // const [ultimaReserva, setUltimaReserva] = useState(null);
   const [ultimoPedido, setUltimoPedido] = useState(null);
   const router = useRouter();
   const flatListRef = useRef(null);
@@ -72,19 +74,19 @@ export default function Index() {
 
 
 // Carregar dados iniciais
-  useEffect(() => {
-    AsyncStorage.getItem('ultimaReserva').then(data => {
-      if (data) setUltimaReserva(JSON.parse(data));
-    });
-    AsyncStorage.getItem('ultimoPedido').then(data => {
-      if (data) setUltimoPedido(JSON.parse(data));
-    });
-  }, []);
+  // useEffect(() => {
+  //   AsyncStorage.getItem('ultimaReserva').then(data => {
+  //     if (data) setUltimaReserva(JSON.parse(data));
+  //   });
+  //   AsyncStorage.getItem('ultimoPedido').then(data => {
+  //     if (data) setUltimoPedido(JSON.parse(data));
+  //   });
+  // }, []);
 
   // Salvar alterações no storage
-  useEffect(() => {
-    AsyncStorage.setItem('ultimaReserva', JSON.stringify(ultimaReserva));
-  }, [ultimaReserva]);
+  // useEffect(() => {
+  //   AsyncStorage.setItem('ultimaReserva', JSON.stringify(ultimaReserva));
+  // }, [ultimaReserva]);
 
   useEffect(() => {
     AsyncStorage.setItem('ultimoPedido', JSON.stringify(ultimoPedido));
@@ -95,15 +97,40 @@ export default function Index() {
     flatListRef.current?.scrollToEnd({ animated: true });
   }, [conversas]);
 
+  useEffect(() => {
+  const carregarPedidoSalvo = async () => {
+    const ra = await AsyncStorage.getItem('ra');
+    if (!ra) return;
+
+    try {
+      const resp = await fetch(`${PEDIDO_URL}/${ra}`);
+      if (!resp.ok) return;
+
+      const pedidoSalvo = await resp.json();
+      setUltimoPedido(pedidoSalvo);
+
+      setConversas(prev => [
+        ...prev,
+        { id: Date.now().toString(), tipo: 'opcoes-pedido', de: 'bot' }
+      ]);
+    } catch (e) {
+      console.error('❌ Erro ao carregar pedido salvo:', e);
+    }
+  };
+
+  carregarPedidoSalvo();
+}, []);
+
+
   
 
 
   // Após os useEffect:
-const salvarReservaGlobal = async (reserva) => {
-  const existentes = await AsyncStorage.getItem('todasReservas');
-  const lista = existentes ? JSON.parse(existentes) : [];
-  await AsyncStorage.setItem('todasReservas', JSON.stringify([...lista, reserva]));
-};
+// const salvarReservaGlobal = async (reserva) => {
+//   const existentes = await AsyncStorage.getItem('todasReservas');
+//   const lista = existentes ? JSON.parse(existentes) : [];
+//   await AsyncStorage.setItem('todasReservas', JSON.stringify([...lista, reserva]));
+// };
 
 const salvarPedidoGlobal = async (pedido) => {
   try {
@@ -117,6 +144,7 @@ const salvarPedidoGlobal = async (pedido) => {
       hour: '2-digit',
       minute: '2-digit',
     });
+    
 
     const atualizado = [...lista, { ...pedido, status: 'Pendente', dataHora }];
 
@@ -138,12 +166,12 @@ const salvarPedidoGlobal = async (pedido) => {
   const tipo = esperandoConfirmacao.current;
   esperandoConfirmacao.current = null;
 
-  if (tipo === 'reserva') {
-    setConversas(prev => [
-      ...prev,
-      { id: Date.now().toString(), tipo: 'formulario', de: 'bot' },
-    ]);
-  }
+  // if (tipo === 'reserva') {
+  //   setConversas(prev => [
+  //     ...prev,
+  //     { id: Date.now().toString(), tipo: 'formulario', de: 'bot' },
+  //   ]);
+  // }
 
   if (tipo === 'pedido') {
     setConversas(prev => [
@@ -263,31 +291,31 @@ const comandosReconhecidos = {
     }
   },
 
-  'ver reserva': () => {
-    if (ultimaReserva) {
-      setConversas((prev) => [
-        ...prev,
-        { id: Date.now().toString(), tipo: 'opcoes-reserva', de: 'bot' },
-      ]);
-    } else {
-      setConversas((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          texto: '📋 Você não tem reservas ativas. Deseja fazer uma?',
-          de: 'bot',
-        },
-      ]);
-      esperandoConfirmacao.current = 'reserva';
-    }
-  },
+  // 'ver reserva': () => {
+  //   if (ultimaReserva) {
+  //     setConversas((prev) => [
+  //       ...prev,
+  //       { id: Date.now().toString(), tipo: 'opcoes-reserva', de: 'bot' },
+  //     ]);
+  //   } else {
+  //     setConversas((prev) => [
+  //       ...prev,
+  //       {
+  //         id: Date.now().toString(),
+  //         texto: '📋 Você não tem reservas ativas. Deseja fazer uma?',
+  //         de: 'bot',
+  //       },
+  //     ]);
+  //     esperandoConfirmacao.current = 'reserva';
+  //   }
+  // },
 
   'horarios': responderHorario,
-  'reservar': () =>
-    setConversas((prev) => [
-      ...prev,
-      { id: Date.now().toString(), tipo: 'formulario', de: 'bot' },
-    ]),
+  // 'reservar': () =>
+  //   setConversas((prev) => [
+  //     ...prev,
+  //     { id: Date.now().toString(), tipo: 'formulario', de: 'bot' },
+  //   ]),
 };
 
 
@@ -346,129 +374,128 @@ function encontrarComandoSemelhante(input, comandos) {
         }
           renderItem={({ item }) => {
             // Formulário de Reserva
-            if (item.tipo === 'formulario' || item.tipo === 'editar-formulario') {
-              return (
-                <AnimatedBalao style={[styles.balao, styles.bot]}>
-                  <FormularioReserva
-                    reservaInicial={item.tipo === 'editar-formulario' ? ultimaReserva : { nome:'',data:'',horario:'',pessoas:'',telefone:'',obs:'' }}
-                    onConfirmar={reserva => {
-                      setUltimaReserva(reserva);
-                      salvarReservaGlobal(reserva); // <-- aqui adiciona
-                      setConversas(prev => [...prev, { id:Date.now().toString(), tipo:'opcoes-reserva', de:'bot' }]);
-                    }}
+            // if (item.tipo === 'formulario' || item.tipo === 'editar-formulario') {
+            //   return (
+            //     <AnimatedBalao style={[styles.balao, styles.bot]}>
+            //       <FormularioReserva
+            //         reservaInicial={item.tipo === 'editar-formulario' ? ultimaReserva : { nome:'',data:'',horario:'',pessoas:'',telefone:'',obs:'' }}
+            //         onConfirmar={reserva => {
+            //           setUltimaReserva(reserva);
+            //           salvarReservaGlobal(reserva); // <-- aqui adiciona
+            //           setConversas(prev => [...prev, { id:Date.now().toString(), tipo:'opcoes-reserva', de:'bot' }]);
+            //         }}
 
-                  />
-                </AnimatedBalao>
-              );
-            }
+            //       />
+            //     </AnimatedBalao>
+            //   );
+            // }
             // Formulário de Pedido
-           // de
 if (item.tipo === 'pedido') {
   return (
     <AnimatedBalao style={[styles.balao, styles.bot]}>
       <FormularioPedido
-  onConfirmar={pedido => {
-    setUltimoPedido(pedido);
-    salvarPedidoGlobal(pedido);
-    setConversas(prev => {
-      const semForm = prev.filter(i => i.tipo !== 'pedido');
-      return [
-        ...semForm,
-        {
-          id: (Date.now() + 1).toString(),
-          texto: pedido.resumo, // ← ✅ usa o resumo que já vem pronto
-          de: 'bot'
-        }
-      ];
-    });
-  }}
-/>
+        onConfirmar={pedido => {
+          const dataHoraCriacao = new Date().toISOString();
+          const pedidoComData = { ...pedido, criadoEm: dataHoraCriacao };
 
+          setUltimoPedido(pedidoComData);
+          salvarPedidoGlobal(pedidoComData);
+          setConversas(prev => {
+            const semForm = prev.filter(i => i.tipo !== 'pedido');
+            return [
+              ...semForm,
+              {
+                id: (Date.now() + 1).toString(),
+                texto: pedido.resumo,
+                de: 'bot'
+              }
+            ];
+          });
+        }}
+      />
     </AnimatedBalao>
   );
 }
+
 
             // Opções Reserva
-           if (item.tipo === 'opcoes-reserva' && ultimaReserva) {
-  return (
-    <AnimatedBalao style={[styles.balao, styles.bot]}>
-      <Text style={styles.textoBot}>
-        📋 <Text style={{ fontWeight:'bold' }}>Sua Reserva</Text>
-        {'\n'}Status: confirmada
-        {'\n'}Nome: {ultimaReserva.nome}
-        {'\n'}Data: {ultimaReserva.data} às {ultimaReserva.horario}
-        {'\n'}Pessoas: {ultimaReserva.pessoas}
-        {'\n'}Telefone: {ultimaReserva.telefone}
-        {'\n'}Obs.: {ultimaReserva.obs || 'Nenhuma'}
-      </Text>
-      <View style={styles.opcoesRow}>
-        <TouchableOpacity
-          style={styles.cancelarBtn}
-          onPress={async () => {
-            setUltimaReserva(null);
-            await AsyncStorage.removeItem('ultimaReserva');
+//            if (item.tipo === 'opcoes-reserva' && ultimaReserva) {
+//   return (
+//     <AnimatedBalao style={[styles.balao, styles.bot]}>
+//       <Text style={styles.textoBot}>
+//         📋 <Text style={{ fontWeight:'bold' }}>Sua Reserva</Text>
+//         {'\n'}Status: confirmada
+//         {'\n'}Nome: {ultimaReserva.nome}
+//         {'\n'}Data: {ultimaReserva.data} às {ultimaReserva.horario}
+//         {'\n'}Pessoas: {ultimaReserva.pessoas}
+//         {'\n'}Telefone: {ultimaReserva.telefone}
+//         {'\n'}Obs.: {ultimaReserva.obs || 'Nenhuma'}
+//       </Text>
+//       <View style={styles.opcoesRow}>
+//         <TouchableOpacity
+//           style={styles.cancelarBtn}
+//           onPress={async () => {
+//             setUltimaReserva(null);
+//             await AsyncStorage.removeItem('ultimaReserva');
 
-            // Remover também do painel da cozinha
-            const todas = await AsyncStorage.getItem('todasReservas');
-            if (todas) {
-              const lista = JSON.parse(todas);
-              const novaLista = lista.filter(
-                r => r.telefone !== ultimaReserva.telefone || r.data !== ultimaReserva.data
-              );
-              await AsyncStorage.setItem('todasReservas', JSON.stringify(novaLista));
-            }
+//             // Remover também do painel da cozinha
+//             const todas = await AsyncStorage.getItem('todasReservas');
+//             if (todas) {
+//               const lista = JSON.parse(todas);
+//               const novaLista = lista.filter(
+//                 r => r.telefone !== ultimaReserva.telefone || r.data !== ultimaReserva.data
+//               );
+//               await AsyncStorage.setItem('todasReservas', JSON.stringify(novaLista));
+//             }
 
-            setConversas(prev => [
-              ...prev,
-              { id: Date.now().toString(), texto: '❌ Reserva cancelada com sucesso.', de: 'bot' },
-            ]);
-          }}
-        >
-          <Text style={styles.cancelarTexto}>Cancelar</Text>
-        </TouchableOpacity>
+//             setConversas(prev => [
+//               ...prev,
+//               { id: Date.now().toString(), texto: '❌ Reserva cancelada com sucesso.', de: 'bot' },
+//             ]);
+//           }}
+//         >
+//           <Text style={styles.cancelarTexto}>Cancelar</Text>
+//         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.alterarBtn}
-          onPress={() =>
-            setConversas(prev => [
-              ...prev,
-              { id: Date.now().toString(), tipo: 'editar-formulario', de: 'bot' },
-            ])
-          }
-        >
-          <Text style={styles.alterarTexto}>Alterar</Text>
-        </TouchableOpacity>
-      </View>
-    </AnimatedBalao>
-  );
-}
+//         <TouchableOpacity
+//           style={styles.alterarBtn}
+//           onPress={() =>
+//             setConversas(prev => [
+//               ...prev,
+//               { id: Date.now().toString(), tipo: 'editar-formulario', de: 'bot' },
+//             ])
+//           }
+//         >
+//           <Text style={styles.alterarTexto}>Alterar</Text>
+//         </TouchableOpacity>
+//       </View>
+//     </AnimatedBalao>
+//   );
+// }
             // Opções Pedido
             if (item.tipo === 'opcoes-pedido' && ultimoPedido) {
-              return (
-                <AnimatedBalao style={[styles.balao, styles.bot]}>
-                  <Text style={styles.textoBot}>
-                    📦 <Text style={{ fontWeight:'bold' }}>Pedido Atual</Text>
-                    {'\n'}Cliente: {ultimoPedido.nome}
-                    {'\n'}RA: {ultimoPedido.ra}
-                    {'\n'}Item: {ultimoPedido.item}
-                    {'\n'}Qtd: {ultimoPedido.quantidade}
-                    {'\n'}Obs.: {ultimoPedido.obs||'Nenhuma'}
-                    {'\n'}Bebida: {ultimoPedido.bebida || 'Nenhuma selecionada'}
-                  </Text>
-                  <View style={styles.opcoesRow}>
-                    <TouchableOpacity style={styles.cancelarBtn} onPress={() => {
-                      setUltimoPedido(null);
-                      setConversas(prev => [...prev, { id:Date.now().toString(), texto:'❌ Pedido cancelado.', de:'bot' }]);
-                    }}>
-                      <Text style={styles.cancelarTexto}>Cancelar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.alterarBtn} onPress={() => setConversas(prev => [...prev, { id:Date.now().toString(), tipo:'editar-pedido', de:'bot' }])}>
-                      <Text style={styles.alterarTexto}>Alterar</Text>
-                    </TouchableOpacity>
-                  </View>
-                </AnimatedBalao>
-              );
-            }
+  return (
+    <BalaoPedidoComTempo
+      pedido={ultimoPedido}
+      onCancelar={() => {
+        setUltimoPedido(null);
+        setConversas(prev => [...prev, {
+          id: Date.now().toString(),
+          texto: '❌ Pedido cancelado.',
+          de: 'bot'
+        }]);
+      }}
+      onEditar={() => {
+        setConversas(prev => [...prev, {
+          id: Date.now().toString(),
+          tipo: 'editar-pedido',
+          de: 'bot'
+        }]);
+      }}
+    />
+  );
+}
+
             // Editar Pedido
             if (item.tipo === 'editar-pedido') {
   return (
@@ -476,8 +503,11 @@ if (item.tipo === 'pedido') {
       <FormularioPedido
         pedidoInicial={ultimoPedido}
         onConfirmar={pedido => {
-          setUltimoPedido(pedido);
-          salvarPedidoGlobal(pedido);
+          const dataHoraCriacao = new Date().toISOString();
+          const pedidoComData = { ...pedido, criadoEm: dataHoraCriacao };
+
+          setUltimoPedido(pedidoComData);
+          salvarPedidoGlobal(pedidoComData);
 
           const precos = {
             'Filé de Frango Grelhado': 28.99,
@@ -511,6 +541,7 @@ if (item.tipo === 'pedido') {
     </AnimatedBalao>
   );
 }
+
 
             // Mensagens padrão
             return (
