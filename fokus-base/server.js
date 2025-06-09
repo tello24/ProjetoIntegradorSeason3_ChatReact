@@ -231,8 +231,31 @@ app.post('/cardapio', async (req, res) => {
   }
 });
 
+// No seu server.js (backend Node.js)
 
+// DELETE item individual (novo)
+app.delete('/cardapio/item/:catId/:itemId', async (req, res) => {
+  const { catId, itemId } = req.params;
 
+  try {
+    const categoria = await Categoria.findById(catId);
+    if (!categoria) {
+      return res.status(404).json({ erro: 'Categoria não encontrada' });
+    }
+
+    categoria.itens = categoria.itens.filter(
+      (item) => item._id.toString() !== itemId
+    );
+
+    await categoria.save();
+    res.json({ mensagem: 'Item excluído com sucesso!' });
+  } catch (e) {
+    console.error('❌ Erro ao excluir item:', e);
+    res.status(500).json({ erro: 'Erro ao excluir item do banco' });
+  }
+});
+
+// Excluir categoria
 app.delete('/cardapio/:id', async (req, res) => {
   const { id } = req.params;
 
@@ -247,8 +270,6 @@ app.delete('/cardapio/:id', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao excluir categoria' });
   }
 });
-
-
 
 
 app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
