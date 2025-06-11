@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { CARDAPIO_URL } from './utils/config';
-import BalaoPedidoComTempo from './components/BalaoPedidoComTempo';
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { BASE_URL, CARDAPIO_URL, PEDIDO_URL } from "./utils/config";
+import BalaoPedidoComTempo from "./components/BalaoPedidoComTempo";
 import {
   StyleSheet,
   Text,
@@ -12,30 +12,76 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  Pressable,              
+  Pressable,
   KeyboardAvoidingView,
   Platform,
-  Animated, useWindowDimensions,
-} from 'react-native';
+  Animated,
+  useWindowDimensions,
+} from "react-native";
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 // import FormularioReserva from './components/FormularioReserva';
-import FormularioPedido from './components/FormularioPedido';
+import FormularioPedido from "./components/FormularioPedido";
 
 //
-const apagarPedido = async(id) => {
+// Função 1: Busca TODOS os pedidos no backend
+const buscarId = async () => {
   try {
-    const response = await fetch("http://192.168.56.1:3001" + "/pedidos/" + id , { 
-      method:"DELETE", 
-      headers: {
-
-        'Content-Type': 'application/json',
-      },
-    })
-  } catch (error) {
-    
+    const response = await fetch(PEDIDO_URL, { method: "GET" });
+    if (!response.ok) {
+      throw new Error(`Erro na rede: ${response.status}`);
+    }
+    const pedidoRecebido = await response.json();
+    return pedidoRecebido;
+  } catch (err) {
+    console.error("Erro em buscarId:", err);
+    return null;
   }
-}
+};
+
+// Função 2: Pega o resultado da busca e extrai o ID do PRIMEIRO pedido
+const pedidosIds = async () => {
+  const dadosDoPedido = await buscarId();
+  if (dadosDoPedido && dadosDoPedido.length > 0) {
+    const primeiroPedido = dadosDoPedido[0];
+    const ultimoPedidoId = primeiroPedido._id;
+    return ultimoPedidoId;
+  } else {
+    console.log("Nenhum pedido retornado pela busca.");
+    return null;
+  }
+};
+
+// Função 3: Recebe um ID e manda a requisição DELETE para o backend
+const apagarPedido = async (idDoPedido) => {
+  if (!idDoPedido) {
+    console.error("apagarPedido foi chamado com um ID indefinido.");
+    return;
+  }
+  const urlParaApagar = `${BASE_URL}/pedidos/${idDoPedido}`;
+  try {
+    const response = await fetch(urlParaApagar, { method: "DELETE" });
+    if (!response.ok) {
+      throw new Error("Falha ao apagar o pedido no servidor.");
+    }
+    const resultado = await response.json();
+    console.log("Resposta do servidor:", resultado.mensagem);
+  } catch (error) {
+    console.error("Ocorreu um erro na função apagarPedido:", error);
+  }
+};
+
+// >>> Função 4: A "Orquestradora" que une tudo <<<
+// É ESTA FUNÇÃO QUE SEU BOTÃO DEVE CHAMAR!
+const handleApagarUltimoPedido = async () => {
+    console.log("Iniciando processo para apagar último pedido...");
+    const idParaApagar = await pedidosIds(); // Pega o ID
+    if (idParaApagar) {
+        await apagarPedido(idParaApagar); // Usa o ID para apagar
+    } else {
+        console.log("Processo cancelado: nenhum ID de pedido foi encontrado.");
+    }
+};
 
 // Componente para fade-in das mensagens
 const AnimatedBalao = ({ style, children }) => {
@@ -50,7 +96,7 @@ const AnimatedBalao = ({ style, children }) => {
   }, [fadeAnim]);
 
   return (
-    <Animated.View style={[style, { opacity: fadeAnim }]}>  
+    <Animated.View style={[style, { opacity: fadeAnim }]}>
       {children}
     </Animated.View>
   );
@@ -60,20 +106,23 @@ export default function Index() {
   const [hovered, setHovered] = useState(null);
   const esperandoConfirmacao = useRef(null);
   const dataHoraCriacao = new Date().toISOString();
-  const [mensagem, setMensagem] = useState('');
+  const [mensagem, setMensagem] = useState("");
   const [conversas, setConversas] = useState([
-    { id: '1', texto: '🍽️ Bem-vindo ao Restaurante Poliedro!', de: 'bot' },
-    { id: '2', texto: 'Como posso ajudar? Use os botões rápidos ou digite sua dúvida.', de: 'bot' },
+    { id: "1", texto: "🍽️ Bem-vindo ao Restaurante Poliedro!", de: "bot" },
+    {
+      id: "2",
+      texto: "Como posso ajudar? Use os botões rápidos ou digite sua dúvida.",
+      de: "bot",
+    },
   ]);
   // const [ultimaReserva, setUltimaReserva] = useState(null);
   const [ultimoPedido, setUltimoPedido] = useState(null);
   const router = useRouter();
   const flatListRef = useRef(null);
 
-  
- // responsivdidade
-    const { width, height } = useWindowDimensions();
-  const isWeb = Platform.OS === 'web';
+  // responsivdidade
+  const { width, height } = useWindowDimensions();
+  const isWeb = Platform.OS === "web";
   const dynamicStyle = isWeb
     ? {
         width: Math.min(width * 0.98, 1600),
@@ -84,10 +133,7 @@ export default function Index() {
         height: height * 0.8,
       };
 
- 
-
-
-// Carregar dados iniciais
+  // Carregar dados iniciais
   // useEffect(() => {
   //   AsyncStorage.getItem('ultimaReserva').then(data => {
   //     if (data) setUltimaReserva(JSON.parse(data));
@@ -103,7 +149,7 @@ export default function Index() {
   // }, [ultimaReserva]);
 
   useEffect(() => {
-    AsyncStorage.setItem('ultimoPedido', JSON.stringify(ultimoPedido));
+    AsyncStorage.setItem("ultimoPedido", JSON.stringify(ultimoPedido));
   }, [ultimoPedido]);
 
   // Scroll para fim sempre que conversas mudar
@@ -112,280 +158,294 @@ export default function Index() {
   }, [conversas]);
 
   useEffect(() => {
-  const carregarPedidoSalvo = async () => {
-    const ra = await AsyncStorage.getItem('ra');
-    if (!ra) return;
+    const carregarPedidoSalvo = async () => {
+      const ra = await AsyncStorage.getItem("ra");
+      if (!ra) return;
 
+      try {
+        const resp = await fetch(`${PEDIDO_URL}/${ra}`);
+        if (!resp.ok) return;
+
+        const pedidoSalvo = await resp.json();
+        setUltimoPedido(pedidoSalvo);
+
+        setConversas((prev) => [
+          ...prev,
+          { id: Date.now().toString(), tipo: "opcoes-pedido", de: "bot" },
+        ]);
+      } catch (e) {
+        console.error("❌ Erro ao carregar pedido salvo:", e);
+      }
+    };
+
+    carregarPedidoSalvo();
+  }, []);
+
+  // Após os useEffect:
+  // const salvarReservaGlobal = async (reserva) => {
+  //   const existentes = await AsyncStorage.getItem('todasReservas');
+  //   const lista = existentes ? JSON.parse(existentes) : [];
+  //   await AsyncStorage.setItem('todasReservas', JSON.stringify([...lista, reserva]));
+  // };
+
+  const salvarPedidoGlobal = async (pedido) => {
     try {
-      const resp = await fetch(`${PEDIDO_URL}/${ra}`);
-      if (!resp.ok) return;
+      const pedidosExistentes = await AsyncStorage.getItem("todosPedidos");
+      const lista = pedidosExistentes ? JSON.parse(pedidosExistentes) : [];
 
-      const pedidoSalvo = await resp.json();
-      setUltimoPedido(pedidoSalvo);
+      const dataHora = new Date().toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
-      setConversas(prev => [
-        ...prev,
-        { id: Date.now().toString(), tipo: 'opcoes-pedido', de: 'bot' }
-      ]);
+      const atualizado = [
+        ...lista,
+        { ...pedido, status: "Pendente", dataHora },
+      ];
+
+      await AsyncStorage.setItem("todosPedidos", JSON.stringify(atualizado));
     } catch (e) {
-      console.error('❌ Erro ao carregar pedido salvo:', e);
+      console.log("Erro ao salvar pedido na cozinha:", e);
     }
   };
 
-  carregarPedidoSalvo();
-}, []);
-
-
-  
-
-
-  // Após os useEffect:
-// const salvarReservaGlobal = async (reserva) => {
-//   const existentes = await AsyncStorage.getItem('todasReservas');
-//   const lista = existentes ? JSON.parse(existentes) : [];
-//   await AsyncStorage.setItem('todasReservas', JSON.stringify([...lista, reserva]));
-// };
-
-const salvarPedidoGlobal = async (pedido) => {
-  try {
-    const pedidosExistentes = await AsyncStorage.getItem('todosPedidos');
-    const lista = pedidosExistentes ? JSON.parse(pedidosExistentes) : [];
-    
-    const dataHora = new Date().toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    
-
-    const atualizado = [...lista, { ...pedido, status: 'Pendente', dataHora }];
-
-    await AsyncStorage.setItem('todosPedidos', JSON.stringify(atualizado));
-  } catch (e) {
-    console.log('Erro ao salvar pedido na cozinha:', e);
-  }
-};
-
   const enviarMensagem = (textoDigitado) => {
-  const msg = textoDigitado?.trim().toLowerCase() || mensagem.trim().toLowerCase();
-  if (!msg) return;
+    const msg =
+      textoDigitado?.trim().toLowerCase() || mensagem.trim().toLowerCase();
+    if (!msg) return;
 
-  const cliente = { id: Date.now().toString(), texto: msg, de: 'cliente' };
-  setConversas(prev => [...prev, cliente]);
+    const cliente = { id: Date.now().toString(), texto: msg, de: "cliente" };
+    setConversas((prev) => [...prev, cliente]);
 
-  // Verifica confirmação pendente
-  if (msg === 'sim' && esperandoConfirmacao.current) {
-  const tipo = esperandoConfirmacao.current;
-  esperandoConfirmacao.current = null;
+    // Verifica confirmação pendente
+    if (msg === "sim" && esperandoConfirmacao.current) {
+      const tipo = esperandoConfirmacao.current;
+      esperandoConfirmacao.current = null;
 
-  // if (tipo === 'reserva') {
-  //   setConversas(prev => [
-  //     ...prev,
-  //     { id: Date.now().toString(), tipo: 'formulario', de: 'bot' },
-  //   ]);
-  // }
+      // if (tipo === 'reserva') {
+      //   setConversas(prev => [
+      //     ...prev,
+      //     { id: Date.now().toString(), tipo: 'formulario', de: 'bot' },
+      //   ]);
+      // }
 
-  if (tipo === 'pedido') {
-    setConversas(prev => [
-      ...prev,
-      { id: Date.now().toString(), tipo: 'pedido', de: 'bot' },
-    ]);
-  }
+      if (tipo === "pedido") {
+        setConversas((prev) => [
+          ...prev,
+          { id: Date.now().toString(), tipo: "pedido", de: "bot" },
+        ]);
+      }
 
-  setMensagem('');
-  return;
-}
-
-
-  const comandos = Object.keys(comandosReconhecidos);
-  const semelhante = encontrarComandoSemelhante(msg, comandos);
-
-  if (semelhante && typeof comandosReconhecidos[semelhante] === 'function') {
-    comandosReconhecidos[semelhante]();
-  } else {
-    const respostaPadrao = {
-      id: (Date.now() + 1).toString(),
-      texto: 'Desculpe, não entendi o que você quis dizer. Pode tentar novamente?',
-      de: 'bot',
-    };
-    setConversas(prev => [...prev, respostaPadrao]);
-  }
-
-  setMensagem('');
-};
-
-const responderCardapio = async () => {
-  const pergunta = { id: Date.now().toString(), texto: 'Quero ver o cardápio!', de: 'cliente' };
-  setConversas(prev => [...prev, pergunta]);
-
-  try {
-    const res = await fetch(CARDAPIO_URL);
-    const data = await res.json();
-
-    const categorias = Array.isArray(data) ? data : data.categorias || [];
-
-    if (!categorias.length) {
-      const msg = {
-        id: (Date.now() + 1).toString(),
-        texto: '📭 Cardápio indisponível no momento.',
-        de: 'bot',
-      };
-      return setConversas(prev => [...prev, msg]);
+      setMensagem("");
+      return;
     }
 
-    const respostaFormatada = categorias.map(cat => {
-      const itensFormatados = cat.itens.map(i => `• ${i.nome} – R$ ${i.preco.toFixed(2)}`).join('\n');
-      return ` ${cat.nome}\n${itensFormatados}`;
-    }).join('\n\n');
+    const comandos = Object.keys(comandosReconhecidos);
+    const semelhante = encontrarComandoSemelhante(msg, comandos);
 
-    const resposta = {
-      id: (Date.now() + 2).toString(),
-      texto: `🍽️ Nosso Cardápio\n\n${respostaFormatada}`,
-      de: 'bot',
+    if (semelhante && typeof comandosReconhecidos[semelhante] === "function") {
+      comandosReconhecidos[semelhante]();
+    } else {
+      const respostaPadrao = {
+        id: (Date.now() + 1).toString(),
+        texto:
+          "Desculpe, não entendi o que você quis dizer. Pode tentar novamente?",
+        de: "bot",
+      };
+      setConversas((prev) => [...prev, respostaPadrao]);
+    }
+
+    setMensagem("");
+  };
+
+  const responderCardapio = async () => {
+    const pergunta = {
+      id: Date.now().toString(),
+      texto: "Quero ver o cardápio!",
+      de: "cliente",
     };
+    setConversas((prev) => [...prev, pergunta]);
 
-    setConversas(prev => [...prev, resposta]);
-  } catch (err) {
-    console.error('❌ Erro ao carregar cardápio:', err);
-    const erro = {
-      id: (Date.now() + 3).toString(),
-      texto: '❌ Erro ao carregar o cardápio. Tente novamente mais tarde.',
-      de: 'bot',
+    try {
+      const res = await fetch(CARDAPIO_URL);
+      const data = await res.json();
+
+      const categorias = Array.isArray(data) ? data : data.categorias || [];
+
+      if (!categorias.length) {
+        const msg = {
+          id: (Date.now() + 1).toString(),
+          texto: "📭 Cardápio indisponível no momento.",
+          de: "bot",
+        };
+        return setConversas((prev) => [...prev, msg]);
+      }
+
+      const respostaFormatada = categorias
+        .map((cat) => {
+          const itensFormatados = cat.itens
+            .map((i) => `• ${i.nome} – R$ ${i.preco.toFixed(2)}`)
+            .join("\n");
+          return ` ${cat.nome}\n${itensFormatados}`;
+        })
+        .join("\n\n");
+
+      const resposta = {
+        id: (Date.now() + 2).toString(),
+        texto: `🍽️ Nosso Cardápio\n\n${respostaFormatada}`,
+        de: "bot",
+      };
+
+      setConversas((prev) => [...prev, resposta]);
+    } catch (err) {
+      console.error("❌ Erro ao carregar cardápio:", err);
+      const erro = {
+        id: (Date.now() + 3).toString(),
+        texto: "❌ Erro ao carregar o cardápio. Tente novamente mais tarde.",
+        de: "bot",
+      };
+      setConversas((prev) => [...prev, erro]);
+    }
+  };
+
+  const responderHorario = () => {
+    const pergunta = {
+      id: Date.now().toString(),
+      texto: "Quais são os horários?",
+      de: "cliente",
     };
-    setConversas(prev => [...prev, erro]);
-  }
-};
-
-
-const responderHorario = () => {
-  const pergunta = { id: Date.now().toString(), texto: 'Quais são os horários?', de: 'cliente' };
-  const horario = {
-    id: (Date.now()+1).toString(),
-    texto: `🕒 Horário
+    const horario = {
+      id: (Date.now() + 1).toString(),
+      texto: `🕒 Horário
 Funcionamos de terça a domingo
 – Almoço: 11:30 às 15:00
 – Jantar: 19:00 às 23:00`,
-    de: 'bot',
-  };
-  const endereco = {
-    id: (Date.now()+2).toString(),
-    texto: `📍 Rua dos Sabores, 123 – Centro
+      de: "bot",
+    };
+    const endereco = {
+      id: (Date.now() + 2).toString(),
+      texto: `📍 Rua dos Sabores, 123 – Centro
 📞 (11) 1234-5678`,
-    de: 'bot',
+      de: "bot",
+    };
+    setConversas((prev) => [...prev, pergunta, horario, endereco]);
   };
-  setConversas(prev => [...prev, pergunta, horario, endereco]);
-};
 
-const comandosReconhecidos = {
-  'ver cardapio': responderCardapio,
-  'fazer pedido': () =>
-    setConversas((prev) => [
-      ...prev,
-      { id: Date.now().toString(), tipo: 'pedido', de: 'bot' },
-    ]),
-
-  'ver pedido': () => {
-    if (ultimoPedido) {
+  const comandosReconhecidos = {
+    "ver cardapio": responderCardapio,
+    "fazer pedido": () =>
       setConversas((prev) => [
         ...prev,
-        { id: Date.now().toString(), tipo: 'opcoes-pedido', de: 'bot' },
-      ]);
-    } else {
-      setConversas((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          texto: '📦 Você não tem pedidos ativos. Deseja fazer um?',
-          de: 'bot',
-        },
-      ]);
-      esperandoConfirmacao.current = 'pedido';
+        { id: Date.now().toString(), tipo: "pedido", de: "bot" },
+      ]),
+
+    "ver pedido": () => {
+      if (ultimoPedido) {
+        setConversas((prev) => [
+          ...prev,
+          { id: Date.now().toString(), tipo: "opcoes-pedido", de: "bot" },
+        ]);
+      } else {
+        setConversas((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            texto: "📦 Você não tem pedidos ativos. Deseja fazer um?",
+            de: "bot",
+          },
+        ]);
+        esperandoConfirmacao.current = "pedido";
+      }
+    },
+
+    // 'ver reserva': () => {
+    //   if (ultimaReserva) {
+    //     setConversas((prev) => [
+    //       ...prev,
+    //       { id: Date.now().toString(), tipo: 'opcoes-reserva', de: 'bot' },
+    //     ]);
+    //   } else {
+    //     setConversas((prev) => [
+    //       ...prev,
+    //       {
+    //         id: Date.now().toString(),
+    //         texto: '📋 Você não tem reservas ativas. Deseja fazer uma?',
+    //         de: 'bot',
+    //       },
+    //     ]);
+    //     esperandoConfirmacao.current = 'reserva';
+    //   }
+    // },
+
+    horarios: responderHorario,
+    // 'reservar': () =>
+    //   setConversas((prev) => [
+    //     ...prev,
+    //     { id: Date.now().toString(), tipo: 'formulario', de: 'bot' },
+    //   ]),
+  };
+
+  function encontrarComandoSemelhante(input, comandos) {
+    input = input.toLowerCase();
+    let melhor = null;
+    let melhorPontuacao = 0;
+
+    for (const comando of comandos) {
+      const palavrasComando = comando.toLowerCase().split(" ");
+      let pontuacao = palavrasComando.reduce((score, palavra) => {
+        return score + (input.includes(palavra.slice(0, 4)) ? 1 : 0);
+      }, 0);
+
+      if (pontuacao > melhorPontuacao) {
+        melhorPontuacao = pontuacao;
+        melhor = comando;
+      }
     }
-  },
 
-  // 'ver reserva': () => {
-  //   if (ultimaReserva) {
-  //     setConversas((prev) => [
-  //       ...prev,
-  //       { id: Date.now().toString(), tipo: 'opcoes-reserva', de: 'bot' },
-  //     ]);
-  //   } else {
-  //     setConversas((prev) => [
-  //       ...prev,
-  //       {
-  //         id: Date.now().toString(),
-  //         texto: '📋 Você não tem reservas ativas. Deseja fazer uma?',
-  //         de: 'bot',
-  //       },
-  //     ]);
-  //     esperandoConfirmacao.current = 'reserva';
-  //   }
-  // },
-
-  'horarios': responderHorario,
-  // 'reservar': () =>
-  //   setConversas((prev) => [
-  //     ...prev,
-  //     { id: Date.now().toString(), tipo: 'formulario', de: 'bot' },
-  //   ]),
-};
-
-
-function encontrarComandoSemelhante(input, comandos) {
-  input = input.toLowerCase();
-  let melhor = null;
-  let melhorPontuacao = 0;
-
-  for (const comando of comandos) {
-    const palavrasComando = comando.toLowerCase().split(' ');
-    let pontuacao = palavrasComando.reduce((score, palavra) => {
-      return score + (input.includes(palavra.slice(0, 4)) ? 1 : 0);
-    }, 0);
-
-    if (pontuacao > melhorPontuacao) {
-      melhorPontuacao = pontuacao;
-      melhor = comando;
-    }
+    return melhorPontuacao > 0 ? melhor : null;
   }
-
-  return melhorPontuacao > 0 ? melhor : null;
-}
-
-
 
   return (
     <ImageBackground
-      source={{ uri: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0' }}
+      source={{
+        uri: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0",
+      }}
       style={styles.container}
       resizeMode="cover"
     >
       <KeyboardAvoidingView
         style={[styles.retangulo, dynamicStyle]}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-       <View style={[styles.topoCurvo]}>
-  <TouchableOpacity style={styles.logoutBotao} onPress={() => router.replace('/')}>
-    <Ionicons name="log-out-outline" size={24} color="#fff" />
-  </TouchableOpacity>
+        <View style={[styles.topoCurvo]}>
+          <TouchableOpacity
+            style={styles.logoutBotao}
+            onPress={() => router.replace("/")}
+          >
+            <Ionicons name="log-out-outline" size={24} color="#fff" />
+          </TouchableOpacity>
 
-  <View style={styles.headerCentro}>
-    <Image source={require('./assets/logo.jpg')} style={styles.logo} />
-    <Text style={styles.titulo}>Restaurante Poliedro</Text>
-  </View>
-</View>
-
+          <View style={styles.headerCentro}>
+            <Image source={require("./assets/logo.jpg")} style={styles.logo} />
+            <Text style={styles.titulo}>Restaurante Poliedro</Text>
+          </View>
+        </View>
 
         <FlatList
           ref={flatListRef}
           data={conversas}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           style={[styles.chat]}
           contentContainerStyle={{ padding: 10 }}
           onContentSizeChange={(_, contentHeight) =>
-          flatListRef.current?.scrollToOffset({ offset: contentHeight, animated: true })  
-        }
+            flatListRef.current?.scrollToOffset({
+              offset: contentHeight,
+              animated: true,
+            })
+          }
           renderItem={({ item }) => {
             // Formulário de Reserva
             // if (item.tipo === 'formulario' || item.tipo === 'editar-formulario') {
@@ -404,165 +464,196 @@ function encontrarComandoSemelhante(input, comandos) {
             //   );
             // }
             // Formulário de Pedido
-if (item.tipo === 'pedido') {
-  return (
-    <AnimatedBalao style={[styles.balao, styles.bot]}>
-      <FormularioPedido
-        onConfirmar={pedido => {
-          const dataHoraCriacao = new Date().toISOString();
-          const pedidoComData = { ...pedido, criadoEm: dataHoraCriacao };
+            if (item.tipo === "pedido") {
+              return (
+                <AnimatedBalao style={[styles.balao, styles.bot]}>
+                  <FormularioPedido
+                    onConfirmar={(pedido) => {
+                      const dataHoraCriacao = new Date().toISOString();
+                      const pedidoComData = {
+                        ...pedido,
+                        criadoEm: dataHoraCriacao,
+                      };
 
-          setUltimoPedido(pedidoComData);
-          salvarPedidoGlobal(pedidoComData);
-          setConversas(prev => {
-            const semForm = prev.filter(i => i.tipo !== 'pedido');
-            return [
-              ...semForm,
-              {
-                id: (Date.now() + 1).toString(),
-                texto: pedido.resumo,
-                de: 'bot'
-              }
-            ];
-          });
-        }}
-      />
-    </AnimatedBalao>
-  );
-}
-
+                      setUltimoPedido(pedidoComData);
+                      salvarPedidoGlobal(pedidoComData);
+                      setConversas((prev) => {
+                        const semForm = prev.filter((i) => i.tipo !== "pedido");
+                        return [
+                          ...semForm,
+                          {
+                            id: (Date.now() + 1).toString(),
+                            texto: pedido.resumo,
+                            de: "bot",
+                          },
+                        ];
+                      });
+                    }}
+                  />
+                </AnimatedBalao>
+              );
+            }
 
             // Opções Reserva
-//            if (item.tipo === 'opcoes-reserva' && ultimaReserva) {
-//   return (
-//     <AnimatedBalao style={[styles.balao, styles.bot]}>
-//       <Text style={styles.textoBot}>
-//         📋 <Text style={{ fontWeight:'bold' }}>Sua Reserva</Text>
-//         {'\n'}Status: confirmada
-//         {'\n'}Nome: {ultimaReserva.nome}
-//         {'\n'}Data: {ultimaReserva.data} às {ultimaReserva.horario}
-//         {'\n'}Pessoas: {ultimaReserva.pessoas}
-//         {'\n'}Telefone: {ultimaReserva.telefone}
-//         {'\n'}Obs.: {ultimaReserva.obs || 'Nenhuma'}
-//       </Text>
-//       <View style={styles.opcoesRow}>
-//         <TouchableOpacity
-//           style={styles.cancelarBtn}
-//           onPress={async () => {
-//             setUltimaReserva(null);
-//             await AsyncStorage.removeItem('ultimaReserva');
+            //            if (item.tipo === 'opcoes-reserva' && ultimaReserva) {
+            //   return (
+            //     <AnimatedBalao style={[styles.balao, styles.bot]}>
+            //       <Text style={styles.textoBot}>
+            //         📋 <Text style={{ fontWeight:'bold' }}>Sua Reserva</Text>
+            //         {'\n'}Status: confirmada
+            //         {'\n'}Nome: {ultimaReserva.nome}
+            //         {'\n'}Data: {ultimaReserva.data} às {ultimaReserva.horario}
+            //         {'\n'}Pessoas: {ultimaReserva.pessoas}
+            //         {'\n'}Telefone: {ultimaReserva.telefone}
+            //         {'\n'}Obs.: {ultimaReserva.obs || 'Nenhuma'}
+            //       </Text>
+            //       <View style={styles.opcoesRow}>
+            //         <TouchableOpacity
+            //           style={styles.cancelarBtn}
+            //           onPress={async () => {
+            //             setUltimaReserva(null);
+            //             await AsyncStorage.removeItem('ultimaReserva');
 
-//             // Remover também do painel da cozinha
-//             const todas = await AsyncStorage.getItem('todasReservas');
-//             if (todas) {
-//               const lista = JSON.parse(todas);
-//               const novaLista = lista.filter(
-//                 r => r.telefone !== ultimaReserva.telefone || r.data !== ultimaReserva.data
-//               );
-//               await AsyncStorage.setItem('todasReservas', JSON.stringify(novaLista));
-//             }
+            //             // Remover também do painel da cozinha
+            //             const todas = await AsyncStorage.getItem('todasReservas');
+            //             if (todas) {
+            //               const lista = JSON.parse(todas);
+            //               const novaLista = lista.filter(
+            //                 r => r.telefone !== ultimaReserva.telefone || r.data !== ultimaReserva.data
+            //               );
+            //               await AsyncStorage.setItem('todasReservas', JSON.stringify(novaLista));
+            //             }
 
-//             setConversas(prev => [
-//               ...prev,
-//               { id: Date.now().toString(), texto: '❌ Reserva cancelada com sucesso.', de: 'bot' },
-//             ]);
-//           }}
-//         >
-//           <Text style={styles.cancelarTexto}>Cancelar</Text>
-//         </TouchableOpacity>
+            //             setConversas(prev => [
+            //               ...prev,
+            //               { id: Date.now().toString(), texto: '❌ Reserva cancelada com sucesso.', de: 'bot' },
+            //             ]);
+            //           }}
+            //         >
+            //           <Text style={styles.cancelarTexto}>Cancelar</Text>
+            //         </TouchableOpacity>
 
-//         <TouchableOpacity
-//           style={styles.alterarBtn}
-//           onPress={() =>
-//             setConversas(prev => [
-//               ...prev,
-//               { id: Date.now().toString(), tipo: 'editar-formulario', de: 'bot' },
-//             ])
-//           }
-//         >
-//           <Text style={styles.alterarTexto}>Alterar</Text>
-//         </TouchableOpacity>
-//       </View>
-//     </AnimatedBalao>
-//   );
-// }
+            //         <TouchableOpacity
+            //           style={styles.alterarBtn}
+            //           onPress={() =>
+            //             setConversas(prev => [
+            //               ...prev,
+            //               { id: Date.now().toString(), tipo: 'editar-formulario', de: 'bot' },
+            //             ])
+            //           }
+            //         >
+            //           <Text style={styles.alterarTexto}>Alterar</Text>
+            //         </TouchableOpacity>
+            //       </View>
+            //     </AnimatedBalao>
+            //   );
+            // }
             // Opções Pedido
-            if (item.tipo === 'opcoes-pedido' && ultimoPedido) {
-  return (
-    <BalaoPedidoComTempo
-      pedido={ultimoPedido}
-      onCancelar={() => {
-        console.log(ultimoPedido)
-        apagarPedido("6848dff8d529101487667714")
-        setUltimoPedido(null);
-        setConversas(prev => [...prev, {
-          id: Date.now().toString(),
-          texto: '❌ Pedido cancelado.',
-          de: 'bot'
-        }]);
-      }}
-      onEditar={() => {
-        setConversas(prev => [...prev, {
-          id: Date.now().toString(),
-          tipo: 'editar-pedido',
-          de: 'bot'
-        }]);
-      }}
-    />
-  );
-}
+            if (item.tipo === "opcoes-pedido" && ultimoPedido) {
+              return (
+                <BalaoPedidoComTempo
+                  pedido={ultimoPedido}
+                  onCancelar={() => {
+                    handleApagarUltimoPedido();
+                    setUltimoPedido(null);
+                    setConversas((prev) => [
+                      ...prev,
+                      {
+                        id: Date.now().toString(),
+                        texto: "❌ Pedido cancelado.",
+                        de: "bot",
+                      },
+                    ]);
+                  }}
+                  onEditar={() => {
+                    setConversas((prev) => [
+                      ...prev,
+                      {
+                        id: Date.now().toString(),
+                        tipo: "editar-pedido",
+                        de: "bot",
+                      },
+                    ]);
+                  }}
+                />
+              );
+            }
 
             // Editar Pedido
-            if (item.tipo === 'editar-pedido') {
-  return (
-    <AnimatedBalao style={[styles.balao, styles.bot]}>
-      <FormularioPedido
-        pedidoInicial={ultimoPedido}
-        onConfirmar={pedido => {
-          const dataHoraCriacao = new Date().toISOString();
-          const pedidoComData = { ...pedido, criadoEm: dataHoraCriacao };
+            if (item.tipo === "editar-pedido") {
+              return (
+                <AnimatedBalao style={[styles.balao, styles.bot]}>
+                  <FormularioPedido
+                    pedidoInicial={ultimoPedido}
+                    onConfirmar={(pedido) => {
+                      const dataHoraCriacao = new Date().toISOString();
+                      const pedidoComData = {
+                        ...pedido,
+                        criadoEm: dataHoraCriacao,
+                      };
 
-          setUltimoPedido(pedidoComData);
-          salvarPedidoGlobal(pedidoComData);
+                      setUltimoPedido(pedidoComData);
+                      salvarPedidoGlobal(pedidoComData);
 
-          const precos = {
-            'Filé de Frango Grelhado': 28.99,
-            'Linguiça Toscana Grelhada': 28.99,
-            'Linguiça Calabresa Acebolada': 28.99,
-            'Nuggets de Frango': 28.99,
-            'Salada com Filé de Frango': 26.99,
-            'Salada com Omelete': 26.99,
-            'Salada com Atum': 26.99,
-            'Salada Caesar': 27.99,
-            'Salada com Kibe Vegano ou Quiche': 31.99,
-          };
+                      const precos = {
+                        "Filé de Frango Grelhado": 28.99,
+                        "Linguiça Toscana Grelhada": 28.99,
+                        "Linguiça Calabresa Acebolada": 28.99,
+                        "Nuggets de Frango": 28.99,
+                        "Salada com Filé de Frango": 26.99,
+                        "Salada com Omelete": 26.99,
+                        "Salada com Atum": 26.99,
+                        "Salada Caesar": 27.99,
+                        "Salada com Kibe Vegano ou Quiche": 31.99,
+                      };
 
-          const precoItem = precos[pedido.item] || 0;
-          const precoBebida = pedido.bebida ? 5 : 0;
-          const total = parseInt(pedido.quantidade) * precoItem + precoBebida;
+                      const precoItem = precos[pedido.item] || 0;
+                      const precoBebida = pedido.bebida ? 5 : 0;
+                      const total =
+                        parseInt(pedido.quantidade) * precoItem + precoBebida;
 
-          setConversas(prev => {
-            const semForm = prev.filter(i => i.tipo !== 'editar-pedido');
-            return [
-              ...semForm,
-              {
-                id: (Date.now() + 1).toString(),
-                texto: `✅ Pedido atualizado com sucesso!\n\n🍽️ Item: ${pedido.item} (x${pedido.quantidade})\n🥤 Bebida: ${pedido.bebida || 'Nenhuma'}\n💬 Observações: ${pedido.obs || 'Nenhuma'}\n\n💰 Total: R$ ${total.toFixed(2)}`,
-                de: 'bot'
-              }
-            ];
-          });
-        }}
-      />
-    </AnimatedBalao>
-  );
-}
-
+                      setConversas((prev) => {
+                        const semForm = prev.filter(
+                          (i) => i.tipo !== "editar-pedido"
+                        );
+                        return [
+                          ...semForm,
+                          {
+                            id: (Date.now() + 1).toString(),
+                            texto: `✅ Pedido atualizado com sucesso!\n\n🍽️ Item: ${
+                              pedido.item
+                            } (x${pedido.quantidade})\n🥤 Bebida: ${
+                              pedido.bebida || "Nenhuma"
+                            }\n💬 Observações: ${
+                              pedido.obs || "Nenhuma"
+                            }\n\n💰 Total: R$ ${total.toFixed(2)}`,
+                            de: "bot",
+                          },
+                        ];
+                      });
+                    }}
+                  />
+                </AnimatedBalao>
+              );
+            }
 
             // Mensagens padrão
             return (
-              <AnimatedBalao style={[styles.balao, item.de==='cliente'?styles.cliente:styles.bot]}>
-                <Text style={item.de==='cliente'?styles.textoCliente:styles.textoBot}>{item.texto}</Text>
+              <AnimatedBalao
+                style={[
+                  styles.balao,
+                  item.de === "cliente" ? styles.cliente : styles.bot,
+                ]}
+              >
+                <Text
+                  style={
+                    item.de === "cliente"
+                      ? styles.textoCliente
+                      : styles.textoBot
+                  }
+                >
+                  {item.texto}
+                </Text>
               </AnimatedBalao>
             );
           }}
@@ -579,36 +670,60 @@ if (item.tipo === 'pedido') {
             onSubmitEditing={() => enviarMensagem()}
           />
           <Pressable
-  onPress={() => enviarMensagem()}
-  android_ripple={{ color: 'transparent' }}
-  style={({ pressed }) => [
-    styles.botaoEnviar,
-    pressed && styles.botaoEnviarPress
-  ]}
->
-  <Text style={styles.seta}>➤</Text>
-</Pressable>
-  </View>
+            onPress={() => enviarMensagem()}
+            android_ripple={{ color: "transparent" }}
+            style={({ pressed }) => [
+              styles.botaoEnviar,
+              pressed && styles.botaoEnviarPress,
+            ]}
+          >
+            <Text style={styles.seta}>➤</Text>
+          </Pressable>
+        </View>
 
-    <View style={styles.botoesRodape}>
+        <View style={styles.botoesRodape}>
           {[
-            { label: 'Cardápio', onPress: responderCardapio },
-            { label: 'Horários', onPress: responderHorario },
-            { label: 'Fazer Pedido', onPress: () => setConversas(prev => [...prev, { id: Date.now().toString(), tipo: 'pedido', de: 'bot' }]) },
-            { label: 'Ver Pedido', onPress: () => {
+            { label: "Cardápio", onPress: responderCardapio },
+            { label: "Horários", onPress: responderHorario },
+            {
+              label: "Fazer Pedido",
+              onPress: () =>
+                setConversas((prev) => [
+                  ...prev,
+                  { id: Date.now().toString(), tipo: "pedido", de: "bot" },
+                ]),
+            },
+            {
+              label: "Ver Pedido",
+              onPress: () => {
+                console.log(pedidosIds());
                 if (ultimoPedido) {
-                  setConversas(prev => [...prev, { id: Date.now().toString(), tipo: 'opcoes-pedido', de: 'bot' }]);
+                  setConversas((prev) => [
+                    ...prev,
+                    {
+                      id: Date.now().toString(),
+                      tipo: "opcoes-pedido",
+                      de: "bot",
+                    },
+                  ]);
                 } else {
-                  setConversas(prev => [...prev, { id: Date.now().toString(), texto: 'Você não tem pedidos ativos. Deseja fazer um?', de: 'bot' }]);
-                  esperandoConfirmacao.current = 'pedido';
+                  setConversas((prev) => [
+                    ...prev,
+                    {
+                      id: Date.now().toString(),
+                      texto: "Você não tem pedidos ativos. Deseja fazer um?",
+                      de: "bot",
+                    },
+                  ]);
+                  esperandoConfirmacao.current = "pedido";
                 }
-              }
+              },
             },
           ].map((btn) => (
             <Pressable
               key={btn.label}
               onPress={btn.onPress}
-              android_ripple={{ color: 'transparent' }}
+              android_ripple={{ color: "transparent" }}
               onHoverIn={() => setHovered(btn.label)}
               onHoverOut={() => setHovered(null)}
               style={({ pressed }) => [
@@ -630,206 +745,206 @@ if (item.tipo === 'pedido') {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   retangulo: {
-    backgroundColor: '#fff',    borderRadius: 16,
-    shadowColor: '#000',
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
     elevation: 5,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   topo: {
-    backgroundColor: '#16C1D7',
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: "#16C1D7",
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderColor: '#b03a2e',
+    borderColor: "#b03a2e",
   },
   topoCurvo: {
-  backgroundColor: '#16C1D7',
-  height: 95,
-  borderBottomLeftRadius: 40,
-  borderBottomRightRadius: 40,
-  paddingTop: 16,
-  justifyContent: 'center',
-  // alignItems: 'center',
-  // marginBottom: 10,
-  position: 'relative'
-},
-logoutBotao: {
-  position: 'absolute',
-  top: 16,
-  right: 16,
-  zIndex: 10,
-},
+    backgroundColor: "#16C1D7",
+    height: 95,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    paddingTop: 16,
+    justifyContent: "center",
+    // alignItems: 'center',
+    // marginBottom: 10,
+    position: "relative",
+  },
+  logoutBotao: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    zIndex: 10,
+  },
 
-headerCentro: {
-  alignItems: 'center',
-  justifyContent: 'center',
-},
+  headerCentro: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   centroTopo: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     marginRight: 40,
   },
   titulo: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
   logo: {
     width: 40,
     height: 40,
-    resizeMode: 'cover',
+    resizeMode: "cover",
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: "#fff",
   },
   nomeRestaurante: {
-  color: '#fff',
-  fontSize: 18,
-  fontWeight: 'bold',
-  marginTop: 8,
-},
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 8,
+  },
 
   chat: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: "#f8f8f8",
   },
   balao: {
     padding: 12,
     marginVertical: 5,
     borderRadius: 14,
-    maxWidth: '80%',
-    shadowColor: '#000',
+    maxWidth: "80%",
+    shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 2,
     elevation: 2,
   },
   cliente: {
-    backgroundColor: '#3498db',
-    alignSelf: 'flex-end',
+    backgroundColor: "#3498db",
+    alignSelf: "flex-end",
   },
   bot: {
-    backgroundColor: '#fff',
-    alignSelf: 'flex-start',
+    backgroundColor: "#fff",
+    alignSelf: "flex-start",
   },
   textoCliente: {
     fontSize: 15,
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.2)',
+    color: "#fff",
+    textShadowColor: "rgba(0,0,0,0.2)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 1,
   },
   textoBot: {
     fontSize: 15,
-    color: '#000',
-    textShadowColor: 'rgba(0,0,0,0.1)',
+    color: "#000",
+    textShadowColor: "rgba(0,0,0,0.1)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 1,
   },
   envio: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 10,
     borderTopWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
+    borderColor: "#ddd",
+    backgroundColor: "#fff",
   },
   input: {
     flex: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 20,
     paddingHorizontal: 12,
     height: 40,
   },
   botaoEnviar: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 10,
-    backgroundColor: '#16C1D7',
+    backgroundColor: "#16C1D7",
     borderRadius: 20,
     marginLeft: 8,
   },
   seta: {
     fontSize: 18,
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   botoesRodape: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    backgroundColor: "#fff",
     paddingVertical: 10,
     paddingHorizontal: 5,
   },
   botaoRodape: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 16,
     paddingHorizontal: 12,
     margin: 8,
     borderRadius: 24,
-    width: '30%',
+    width: "30%",
     maxWidth: 220,
-    backgroundColor: '#16C1D7',  
+    backgroundColor: "#16C1D7",
   },
   botaoRodapePress: {
-    backgroundColor: '#1097A6',
+    backgroundColor: "#1097A6",
   },
   botaoRodapeHover: {
-  backgroundColor: '#1097A6',
-},
+    backgroundColor: "#1097A6",
+  },
 
   botaoTextoRodape: {
     fontSize: 16,
-    color: '#fff',
-    fontWeight: '700',
-    textAlign: 'center',
+    color: "#fff",
+    fontWeight: "700",
+    textAlign: "center",
     lineHeight: 20,
   },
   acessoRodape: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingBottom: 10,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   cancelarBtn: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: "#e74c3c",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
   },
   cancelarTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   alterarBtn: {
-    backgroundColor: '#e67e22',
+    backgroundColor: "#e67e22",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
     marginLeft: 8,
   },
   alterarTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   opcoesRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 10,
   },
   logoutIcon: {
-  marginRight: 10,
-  marginLeft: 5,
-},
-
+    marginRight: 10,
+    marginLeft: 5,
+  },
 });

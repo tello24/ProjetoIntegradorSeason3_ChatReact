@@ -156,8 +156,6 @@ app.get('/pedido', async (req, res) => {
   }
 });
 
-
-
 // Atualizar status do pedido
 app.put('/pedidos/:id/status', async (req, res) => {
   const { id } = req.params;
