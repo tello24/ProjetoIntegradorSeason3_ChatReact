@@ -22,6 +22,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // import FormularioReserva from './components/FormularioReserva';
 import FormularioPedido from './components/FormularioPedido';
 
+//
+const apagarPedido = async(id) => {
+  try {
+    const response = await fetch("http://192.168.56.1:3001" + "/pedidos/" + id , { 
+      method:"DELETE", 
+      headers: {
+
+        'Content-Type': 'application/json',
+      },
+    })
+  } catch (error) {
+    
+  }
+}
 
 // Componente para fade-in das mensagens
 const AnimatedBalao = ({ style, children }) => {
@@ -478,6 +492,8 @@ if (item.tipo === 'pedido') {
     <BalaoPedidoComTempo
       pedido={ultimoPedido}
       onCancelar={() => {
+        console.log(ultimoPedido)
+        apagarPedido("6848dff8d529101487667714")
         setUltimoPedido(null);
         setConversas(prev => [...prev, {
           id: Date.now().toString(),
