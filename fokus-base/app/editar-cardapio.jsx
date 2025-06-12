@@ -1,24 +1,14 @@
-// app/editar-cardapio.jsx
 import React, { useState, useEffect } from 'react';
 import Toast from 'react-native-root-toast';
 import { CARDAPIO_URL } from './utils/config';
 import { MaterialIcons } from '@expo/vector-icons';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  StyleSheet,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, StyleSheet, ImageBackground, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function EditarCardapio() {
   const router = useRouter();
   const [categorias, setCategorias] = useState([]);
+  const [fadeAnim] = useState(new Animated.Value(0)); // Controla a animação de fadeInUp
 
   const carregarCardapio = async () => {
     try {
@@ -45,6 +35,13 @@ export default function EditarCardapio() {
 
   useEffect(() => {
     carregarCardapio();
+
+    // Inicia a animação de fadeInUp
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const adicionarCategoria = () => {
@@ -58,8 +55,8 @@ export default function EditarCardapio() {
           {
             id: Date.now().toString() + Math.random(),
             nome: '',
-            preco: ''
-          }
+            preco: '',
+          },
         ],
       },
     ]);
@@ -82,7 +79,7 @@ export default function EditarCardapio() {
                 {
                   id: Date.now().toString() + Math.random(),
                   nome: '',
-                  preco: ''
+                  preco: '',
                 },
               ],
             }
@@ -251,55 +248,55 @@ export default function EditarCardapio() {
 
         <ScrollView contentContainerStyle={{ padding: 16 }}>
           {categorias.map((cat) => (
-            <View key={cat.id} style={styles.card}>
-              <TextInput
-                placeholder="Nome da Categoria"
-                placeholderTextColor="#999"
-                style={styles.input}
-                value={cat.nome}
-                onChangeText={(text) => atualizarCategoria(cat.id || cat.id, 'nome', text)}
-              />
-              {cat.itens.map((item, index) => (
-                <View key={item.id} style={styles.itemLinha}>
-                  <TextInput
-                    placeholder="Nome do Prato"
-                    placeholderTextColor="#999"
-                    style={[styles.input, { flex: 1, marginRight: 8 }]}
-                    value={item.nome}
-                    onChangeText={(text) => atualizarItem(cat.id, index, 'nome', text)}
-                  />
-                  <TextInput
-                    placeholder="Preço"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    style={[styles.input, { width: 80 }]}
-                    // value={item.preco.toString()}
-                    value={item.preco != null ? item.preco.toString() : ''}
-
-                    onChangeText={(text) => atualizarItem(cat.id, index, 'preco', text)}
-                  />
-                  <TouchableOpacity onPress={() => excluirItem(cat._id, item._id)} style={styles.botaoExcluirItem}>
-                    <Text style={styles.textoBotaoExcluirItem}>×</Text>
+            <Animated.View key={cat.id} style={{ opacity: fadeAnim }}>
+              <View style={styles.card}>
+                <TextInput
+                  placeholder="Nome da Categoria"
+                  placeholderTextColor="#999"
+                  style={styles.input}
+                  value={cat.nome}
+                  onChangeText={(text) => atualizarCategoria(cat.id || cat.id, 'nome', text)}
+                />
+                {cat.itens.map((item, index) => (
+                  <View key={item.id} style={styles.itemLinha}>
+                    <TextInput
+                      placeholder="Nome do Prato"
+                      placeholderTextColor="#999"
+                      style={[styles.input, { flex: 1, marginRight: 8 }]}
+                      value={item.nome}
+                      onChangeText={(text) => atualizarItem(cat.id, index, 'nome', text)}
+                    />
+                    <TextInput
+                      placeholder="Preço"
+                      placeholderTextColor="#999"
+                      keyboardType="numeric"
+                      style={[styles.input, { width: 80 }]}
+                      value={item.preco != null ? item.preco.toString() : ''}
+                      onChangeText={(text) => atualizarItem(cat.id, index, 'preco', text)}
+                    />
+                    <TouchableOpacity onPress={() => excluirItem(cat._id, item._id)} style={styles.botaoExcluirItem}>
+                      <Text style={styles.textoBotaoExcluirItem}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <TouchableOpacity onPress={() => adicionarItem(cat.id)} style={styles.adicionarItem}>
+                    <Text style={styles.adicionarTexto}>+ Item</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => removerUltimoItem(cat.id)} style={[styles.adicionarItem, { backgroundColor: '#e67e22' }]}>
+                    <Text style={styles.adicionarTexto}>- Item</Text>
                   </TouchableOpacity>
                 </View>
-              ))}
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <TouchableOpacity onPress={() => adicionarItem(cat.id)} style={styles.adicionarItem}>
-                  <Text style={styles.adicionarTexto}>+ Item</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => removerUltimoItem(cat.id)} style={[styles.adicionarItem, { backgroundColor: '#e67e22' }]}>
-                  <Text style={styles.adicionarTexto}>- Item</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <TouchableOpacity onPress={() => excluirCategoria(cat._id)} style={styles.excluirCategoria}>
+                    <Text style={styles.cancelarTexto}>Excluir Categoria</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={salvarCardapio} style={styles.salvarBtn}>
+                    <Text style={styles.salvarTexto}>Salvar Cardápio</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <TouchableOpacity onPress={() => excluirCategoria(cat._id)} style={styles.excluirCategoria}>
-                  <Text style={styles.cancelarTexto}>Excluir Categoria</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={salvarCardapio} style={styles.salvarBtn}>
-                  <Text style={styles.salvarTexto}>Salvar Cardápio</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            </Animated.View>
           ))}
 
           <TouchableOpacity onPress={adicionarCategoria} style={styles.adicionarCategoria}>
@@ -376,12 +373,10 @@ textoBotaoExcluirItem: {
 },
 
 botaoRecarregar: {
-  
- borderColor: '#FFF',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 3,
-    alignItems: 'center',
+  borderColor: '#FFF',
+  borderWidth: 1,
+  borderRadius: 8,
+  paddingVertical: 3,
+  alignItems: 'center',
 },
-
 });

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LOGIN_URL } from './utils/config';
 import Toast from 'react-native-root-toast';
+import * as Animatable from 'react-native-animatable';  // Importa a biblioteca de animação
 
 import {
   View,
@@ -32,70 +33,68 @@ export default function Index() {
     }
 
     // Verificação extra antes de enviar
-  if (perfil === 'aluno' && !email.endsWith('@p4ed.com')) {
-    Alert.alert('Erro', 'Email de aluno deve terminar com @p4ed.com');
-    return;
-  }
-  if (perfil === 'professor' && !email.endsWith('@sistemapoliedro.com.br')) {
-    return;
-  }
-  if (perfil === 'restaurante' && email !== 'cozinha@gmail.com') {
-    Alert.alert('Erro', 'Email errado');
-    return;
-  }
-
-    
-  try {
-    const resposta = await fetch(LOGIN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, senha }),
-    });
-
-    const json = await resposta.json();
-    console.log('🔵 Resposta do backend:', json);
-
-    if (!resposta.ok) {
-      if (json.erro === 'Usuário não encontrado') {
-        Toast.show('Senha ou email incorrreto. Tente novamente.', {
-          duration: Toast.durations.SHORT,
-          position: Toast.positions.BOTTOM,
-        });
-      } else if (json.erro === 'Senha incorreta') {
-        Toast.show('Senha ou email incorrreto. Tente novamente.', {
-          duration: Toast.durations.SHORT,
-          position: Toast.positions.BOTTOM,
-        });
-      } else {
-        Toast.show(json.erro || 'Erro no login.', {
-          duration: Toast.durations.SHORT,
-          position: Toast.positions.BOTTOM,
-        });
-      }
+    if (perfil === 'aluno' && !email.endsWith('@p4ed.com')) {
+      Alert.alert('Erro', 'Email de aluno deve terminar com @p4ed.com');
+      return;
+    }
+    if (perfil === 'professor' && !email.endsWith('@sistemapoliedro.com.br')) {
+      return;
+    }
+    if (perfil === 'restaurante' && email !== 'cozinha@gmail.com') {
+      Alert.alert('Erro', 'Email errado');
       return;
     }
 
-    // Roteamento por perfil
-    if (json.perfil === 'restaurante') {
-      await AsyncStorage.setItem('perfil', 'restaurante');
-      router.replace('/painel-cozinha');
-    } else if (json.perfil === 'aluno') {
-      await AsyncStorage.setItem('perfil', 'aluno');
-      await AsyncStorage.setItem('ra', json.ra || '');
-      router.replace('/chat-aluno');
-    } else if (json.perfil === 'professor') {
-      await AsyncStorage.setItem('perfil', 'professor');
-      router.replace('/chat-aluno');
-    }
+    try {
+      const resposta = await fetch(LOGIN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
+      });
 
-  } catch (erro) {
-    console.error('❌ Erro ao tentar login:', erro);
-    Toast.show('Erro de conexão com o servidor.', {
-      duration: Toast.durations.SHORT,
-      position: Toast.positions.BOTTOM,
-    });
-  }
-};
+      const json = await resposta.json();
+      console.log('🔵 Resposta do backend:', json);
+
+      if (!resposta.ok) {
+        if (json.erro === 'Usuário não encontrado') {
+          Toast.show('Senha ou email incorreto. Tente novamente.', {
+            duration: Toast.durations.SHORT,
+            position: Toast.positions.BOTTOM,
+          });
+        } else if (json.erro === 'Senha incorreta') {
+          Toast.show('Senha ou email incorreto. Tente novamente.', {
+            duration: Toast.durations.SHORT,
+            position: Toast.positions.BOTTOM,
+          });
+        } else {
+          Toast.show(json.erro || 'Erro no login.', {
+            duration: Toast.durations.SHORT,
+            position: Toast.positions.BOTTOM,
+          });
+        }
+        return;
+      }
+
+      // Roteamento por perfil
+      if (json.perfil === 'restaurante') {
+        await AsyncStorage.setItem('perfil', 'restaurante');
+        router.replace('/painel-cozinha');
+      } else if (json.perfil === 'aluno') {
+        await AsyncStorage.setItem('perfil', 'aluno');
+        await AsyncStorage.setItem('ra', json.ra || '');
+        router.replace('/chat-aluno');
+      } else if (json.perfil === 'professor') {
+        await AsyncStorage.setItem('perfil', 'professor');
+        router.replace('/chat-aluno');
+      }
+    } catch (erro) {
+      console.error('❌ Erro ao tentar login:', erro);
+      Toast.show('Erro de conexão com o servidor.', {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
+    }
+  };
 
   return (
     <ImageBackground
@@ -115,24 +114,32 @@ export default function Index() {
           {!perfil ? (
             <>
               <Text style={styles.titulo}>Entrar como:</Text>
-              <TouchableOpacity
-                style={[styles.botaoEscolha, { marginTop: 10 }]}
-                onPress={() => setPerfil('aluno')}
-              >
-                <Text style={styles.textoBotao}>Aluno</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.botaoEscolha}
-                onPress={() => setPerfil('professor')}
-              >
-                <Text style={styles.textoBotao}>Professor</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.botaoEscolha}
-                onPress={() => setPerfil('restaurante')}
-              >
-                <Text style={styles.textoBotao}>Restaurante</Text>
-              </TouchableOpacity>
+              <Animatable.View animation="fadeInUp" duration={1000}>
+                <TouchableOpacity
+                  style={styles.botaoEscolha}
+                  onPress={() => setPerfil('aluno')}
+                >
+                  <Text style={styles.textoBotao}>Aluno</Text>
+                </TouchableOpacity>
+              </Animatable.View>
+
+              <Animatable.View animation="fadeInUp" duration={1000} delay={300}>
+                <TouchableOpacity
+                  style={styles.botaoEscolha}
+                  onPress={() => setPerfil('professor')}
+                >
+                  <Text style={styles.textoBotao}>Professor</Text>
+                </TouchableOpacity>
+              </Animatable.View>
+
+              <Animatable.View animation="fadeInUp" duration={1000} delay={600}>
+                <TouchableOpacity
+                  style={styles.botaoEscolha}
+                  onPress={() => setPerfil('restaurante')}
+                >
+                  <Text style={styles.textoBotao}>Restaurante</Text>
+                </TouchableOpacity>
+              </Animatable.View>
 
               <View style={styles.areaCriarConta}>
                 <TouchableOpacity onPress={() => router.push('/cadastro')}>
@@ -170,9 +177,12 @@ export default function Index() {
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity style={styles.botaoLogin} onPress={entrar}>
-                <Text style={styles.textoBotaoLogin}>Entrar</Text>
-              </TouchableOpacity>
+              <Animatable.View animation="fadeInUp" duration={1000} delay={900}>
+                <TouchableOpacity style={styles.botaoLogin} onPress={entrar}>
+                  <Text style={styles.textoBotaoLogin}>Entrar</Text>
+                </TouchableOpacity>
+              </Animatable.View>
+
               <TouchableOpacity
                 style={styles.botaoVoltar}
                 onPress={() => {

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { ScrollView } from 'react-native';
-import Toast from 'react-native-root-toast';
-import { BASE_URL } from './utils/config';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LOGIN_URL } from './utils/config';
+import Toast from 'react-native-root-toast';
 import {
   View,
   Text,
@@ -14,9 +16,8 @@ import {
   Alert,
   Image,
   ImageBackground,
+  Animated,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons'; 
 
 export default function Cadastro() {
   const [perfil, setPerfil] = useState(null);
@@ -26,59 +27,82 @@ export default function Cadastro() {
   const [ra, setRa] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
+  const [scale] = useState(new Animated.Value(1)); // Usaremos para o efeito de escala
+  const [fadeAnim] = useState(new Animated.Value(0)); // Usaremos para o efeito de fadeInUp
   const router = useRouter();
 
+  // Função para cadastrar o usuário
   const cadastrarUsuario = async () => {
-  if (!email || !senha || !confirmarSenha) {
-    Toast.show('Preencha todos os campos.', { duration: Toast.durations.SHORT });
-    return;
-  }
-
-  if (senha !== confirmarSenha) {
-    Toast.show('Senhas diferentes.', { duration: Toast.durations.SHORT });
-    return;
-  }
-
-  const dados = {
-    email,
-    senha,
-    perfil,
-    ...(perfil === 'aluno' && ra ? { ra } : {}),
-  };
-
-  try {
-const resposta = await fetch(`${BASE_URL}/cadastro`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(dados),
-});
-
-
-    const json = await resposta.json();
-
-    if (!resposta.ok) {
-      Toast.show(json.erro || 'Erro ao cadastrar.', { duration: Toast.durations.LONG });
+    if (!email || !senha || !confirmarSenha) {
+      Toast.show('Preencha todos os campos.', { duration: Toast.durations.SHORT });
       return;
     }
 
-    Toast.show('Conta criada com sucesso!', { duration: Toast.durations.SHORT });
-    router.replace('/chat-aluno');
-  } catch (erro) {
-    console.error('❌ Erro no cadastro:', erro);
-    Toast.show('Erro de conexão com o servidor.', { duration: Toast.durations.LONG });
-  }
-};
+    if (senha !== confirmarSenha) {
+      Toast.show('Senhas diferentes.', { duration: Toast.durations.SHORT });
+      return;
+    }
 
+    const dados = {
+      email,
+      senha,
+      perfil,
+      ...(perfil === 'aluno' && ra ? { ra } : {}),
+    };
 
+    try {
+      const resposta = await fetch(`${BASE_URL}/cadastro`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados),
+      });
 
+      const json = await resposta.json();
+
+      if (!resposta.ok) {
+        Toast.show(json.erro || 'Erro ao cadastrar.', { duration: Toast.durations.LONG });
+        return;
+      }
+
+      Toast.show('Conta criada com sucesso!', { duration: Toast.durations.SHORT });
+      router.replace('/chat-aluno');
+    } catch (erro) {
+      console.error('❌ Erro no cadastro:', erro);
+      Toast.show('Erro de conexão com o servidor.', { duration: Toast.durations.LONG });
+    }
+  };
+
+  // Função para animar o botão
+  const animarBotao = () => {
+    Animated.spring(scale, {
+      toValue: 0.95,
+      friction: 3,
+      useNativeDriver: true,
+    }).start(() => {
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
+  // Animação fadeInUp para os botões
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   return (
     <ImageBackground
-  source={{ uri: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0' }}
-  style={styles.container}
-  resizeMode="cover"
-  pointerEvents="box-none"
->
+      source={{ uri: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0' }}
+      style={styles.container}
+      resizeMode="cover"
+      pointerEvents="box-none"
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.card}
@@ -92,20 +116,60 @@ const resposta = await fetch(`${BASE_URL}/cadastro`, {
           {!perfil ? (
             <>
               <Text style={styles.label}>Sou:</Text>
-              <TouchableOpacity style={styles.botaoEscolha} onPress={() => setPerfil('aluno')}>
-                <Text style={styles.textoBotao}>Aluno</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.botaoEscolha} onPress={() => setPerfil('professor')}>
-                <Text style={styles.textoBotao}>Professor</Text>
-              </TouchableOpacity>
+              <Animated.View
+                style={{
+                  transform: [{ scale: scale }],
+                  opacity: fadeAnim,
+                }}
+              >
+                <TouchableOpacity
+                  style={styles.botaoEscolha}
+                  onPress={() => {
+                    setPerfil('aluno');
+                    animarBotao();
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.textoBotao}>Aluno</Text>
+                </TouchableOpacity>
+              </Animated.View>
 
-              <TouchableOpacity style={styles.botaoVoltar} onPress={() => router.replace('/')}>
-                <Text style={styles.textoVoltar}>Voltar</Text>
-              </TouchableOpacity>
+              <Animated.View
+                style={{
+                  transform: [{ scale: scale }],
+                  opacity: fadeAnim,
+                }}
+              >
+                <TouchableOpacity
+                  style={styles.botaoEscolha}
+                  onPress={() => {
+                    setPerfil('professor');
+                    animarBotao();
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.textoBotao}>Professor</Text>
+                </TouchableOpacity>
+              </Animated.View>
+
+              <Animated.View
+                style={{
+                  transform: [{ scale: scale }],
+                  opacity: fadeAnim,
+                }}
+              >
+                <TouchableOpacity
+                  style={styles.botaoVoltar}
+                  onPress={() => router.replace('/')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.textoVoltar}>Voltar</Text>
+                </TouchableOpacity>
+              </Animated.View>
             </>
           ) : (
             <>
-              <TextInput 
+              <TextInput
                 style={styles.input}
                 placeholder={perfil === 'aluno' ? 'Email@p4ed.com' : 'Email'}
                 placeholderTextColor="#888"
@@ -155,11 +219,19 @@ const resposta = await fetch(`${BASE_URL}/cadastro`, {
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity style={styles.botaoCadastro} onPress={cadastrarUsuario}>
+              <TouchableOpacity
+                style={styles.botaoCadastro}
+                onPress={cadastrarUsuario}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.textoBotao}>Cadastrar</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.botaoVoltar} onPress={() => setPerfil(null)}>
+              <TouchableOpacity
+                style={styles.botaoVoltar}
+                onPress={() => setPerfil(null)}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.textoVoltar}>Voltar</Text>
               </TouchableOpacity>
             </>
