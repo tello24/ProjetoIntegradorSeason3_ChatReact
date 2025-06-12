@@ -26,6 +26,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 // import FormularioReserva from './components/FormularioReserva';
 import FormularioPedido from "./components/FormularioPedido";
 
+<<<<<<< HEAD
 //
 // Função 1: Busca TODOS os pedidos no backend
 const buscarId = async () => {
@@ -94,6 +95,8 @@ const handleApagarUltimoPedido = async () => {
         console.log("Processo cancelado: nenhum ID de pedido foi encontrado.");
     }
 };
+=======
+>>>>>>> parent of b0d2412 (Update chat-aluno.jsx)
 
 // Componente para fade-in das mensagens
 const AnimatedBalao = ({ style, children }) => {
@@ -585,6 +588,7 @@ Funcionamos de terça a domingo
             //   );
             // }
             // Opções Pedido
+<<<<<<< HEAD
             if (item.tipo === "opcoes-pedido" && ultimoPedido) {
               return (
                 <BalaoPedidoComTempo
@@ -614,6 +618,31 @@ Funcionamos de terça a domingo
                 />
               );
             }
+=======
+            if (item.tipo === 'opcoes-pedido' && ultimoPedido) {
+  return (
+    <BalaoPedidoComTempo
+      pedido={ultimoPedido}
+      onCancelar={() => {
+        setUltimoPedido(null);
+        setConversas(prev => [...prev, {
+          id: Date.now().toString(),
+          texto: '❌ Pedido cancelado.',
+          de: 'bot'
+        }]);
+      }}
+      onEditar={() => {
+        setConversas(prev => [...prev, {
+          id: Date.now().toString(),
+          tipo: 'editar-pedido',
+          de: 'bot'
+        }]);
+      }}
+    />
+  );
+}
+
+>>>>>>> parent of b0d2412 (Update chat-aluno.jsx)
             // Editar Pedido
             if (item.tipo === "editar-pedido") {
   return (
