@@ -3,6 +3,9 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { BASE_URL, CARDAPIO_URL, PEDIDO_URL } from "./utils/config";
 import BalaoPedidoComTempo from "./components/BalaoPedidoComTempo";
+import { CANCELAR_PEDIDO_URL } from './utils/config';
+
+
 import {
   StyleSheet,
   Text,
@@ -53,23 +56,32 @@ const pedidosIds = async () => {
 };
 
 // Função 3: Recebe um ID e manda a requisição DELETE para o backend
-const apagarPedido = async (idDoPedido) => {
-  if (!idDoPedido) {
-    console.error("apagarPedido foi chamado com um ID indefinido.");
+const apagarPedido = async (id) => {
+  if (!id) {
+    console.error("❌ apagarPedido foi chamado com um ID indefinido.");
     return;
   }
-  const urlParaApagar = `${BASE_URL}/pedidos/${idDoPedido}`;
+
+  const url = `${CANCELAR_PEDIDO_URL}/${id}`;
   try {
-    const response = await fetch(urlParaApagar, { method: "DELETE" });
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
     if (!response.ok) {
-      throw new Error("Falha ao apagar o pedido no servidor.");
+      throw new Error("⚠️ Falha ao apagar o pedido no servidor.");
     }
+
     const resultado = await response.json();
-    console.log("Resposta do servidor:", resultado.mensagem);
+    console.log("✅ Resposta do servidor:", resultado.mensagem);
   } catch (error) {
-    console.error("Ocorreu um erro na função apagarPedido:", error);
+    console.error("❌ Ocorreu um erro na função apagarPedido:", error);
   }
 };
+
 
 // >>> Função 4: A "Orquestradora" que une tudo <<<
 // É ESTA FUNÇÃO QUE SEU BOTÃO DEVE CHAMAR!
@@ -104,6 +116,7 @@ const AnimatedBalao = ({ style, children }) => {
 
 export default function Index() {
   const [hovered, setHovered] = useState(null);
+  const [cardapio, setCardapio] = useState([]);
   const esperandoConfirmacao = useRef(null);
   const dataHoraCriacao = new Date().toISOString();
   const [mensagem, setMensagem] = useState("");
@@ -187,6 +200,29 @@ export default function Index() {
   //   const lista = existentes ? JSON.parse(existentes) : [];
   //   await AsyncStorage.setItem('todasReservas', JSON.stringify([...lista, reserva]));
   // };
+
+  useEffect(() => {
+  const carregarCardapio = async () => {
+    try {
+      const res = await fetch(CARDAPIO_URL);
+      const data = await res.json();
+
+      if (Array.isArray(data)) {
+        setCardapio(data.flatMap((cat) => cat.itens || []));
+      } else if (Array.isArray(data.categorias)) {
+        setCardapio(data.categorias.flatMap((cat) => cat.itens || []));
+      } else {
+        console.warn("⚠️ Formato de cardápio inesperado:", data);
+      }
+    } catch (err) {
+      console.error("❌ Erro ao carregar cardápio:", err);
+      setCardapio([]);
+    }
+  };
+
+  carregarCardapio();
+}, []);
+
 
   const salvarPedidoGlobal = async (pedido) => {
     try {
@@ -578,64 +614,55 @@ Funcionamos de terça a domingo
                 />
               );
             }
-
             // Editar Pedido
             if (item.tipo === "editar-pedido") {
-              return (
-                <AnimatedBalao style={[styles.balao, styles.bot]}>
-                  <FormularioPedido
-                    pedidoInicial={ultimoPedido}
-                    onConfirmar={(pedido) => {
-                      const dataHoraCriacao = new Date().toISOString();
-                      const pedidoComData = {
-                        ...pedido,
-                        criadoEm: dataHoraCriacao,
-                      };
+  return (
+    <AnimatedBalao style={[styles.balao, styles.bot]}>
+      <FormularioPedido
+        pedidoInicial={ultimoPedido}
+        onConfirmar={(pedido) => {
+          const dataHoraCriacao = new Date().toISOString();
+          const pedidoComData = {
+            ...pedido,
+            criadoEm: dataHoraCriacao,
+          };
 
-                      setUltimoPedido(pedidoComData);
-                      salvarPedidoGlobal(pedidoComData);
+          setUltimoPedido(pedidoComData);
+          salvarPedidoGlobal(pedidoComData);
 
-                      const precos = {
-                        "Filé de Frango Grelhado": 28.99,
-                        "Linguiça Toscana Grelhada": 28.99,
-                        "Linguiça Calabresa Acebolada": 28.99,
-                        "Nuggets de Frango": 28.99,
-                        "Salada com Filé de Frango": 26.99,
-                        "Salada com Omelete": 26.99,
-                        "Salada com Atum": 26.99,
-                        "Salada Caesar": 27.99,
-                        "Salada com Kibe Vegano ou Quiche": 31.99,
-                      };
+          // 👉 Busca preço real do banco de dados
+          const itemSelecionado = cardapio.find((i) => i.nome === pedido.item);
+          const precoItem = itemSelecionado ? parseFloat(itemSelecionado.preco) : 0;
+          const precoBebida = pedido.bebida ? 5 : 0;
 
-                      const precoItem = precos[pedido.item] || 0;
-                      const precoBebida = pedido.bebida ? 5 : 0;
-                      const total =
-                        parseInt(pedido.quantidade) * precoItem + precoBebida;
+          const total =
+            parseInt(pedido.quantidade) * precoItem + precoBebida;
 
-                      setConversas((prev) => {
-                        const semForm = prev.filter(
-                          (i) => i.tipo !== "editar-pedido"
-                        );
-                        return [
-                          ...semForm,
-                          {
-                            id: (Date.now() + 1).toString(),
-                            texto: `✅ Pedido atualizado com sucesso!\n\n🍽️ Item: ${
-                              pedido.item
-                            } (x${pedido.quantidade})\n🥤 Bebida: ${
-                              pedido.bebida || "Nenhuma"
-                            }\n💬 Observações: ${
-                              pedido.obs || "Nenhuma"
-                            }\n\n💰 Total: R$ ${total.toFixed(2)}`,
-                            de: "bot",
-                          },
-                        ];
-                      });
-                    }}
-                  />
-                </AnimatedBalao>
-              );
-            }
+          setConversas((prev) => {
+            const semForm = prev.filter(
+              (i) => i.tipo !== "editar-pedido"
+            );
+            return [
+              ...semForm,
+              {
+                id: (Date.now() + 1).toString(),
+                texto: `✅ Pedido atualizado com sucesso!\n\n🍽️ Item: ${
+                  pedido.item
+                } (x${pedido.quantidade})\n🥤 Bebida: ${
+                  pedido.bebida || "Nenhuma"
+                }\n💬 Observações: ${
+                  pedido.obs || "Nenhuma"
+                }\n\n💰 Total: R$ ${total.toFixed(2)}`,
+                de: "bot",
+              },
+            ];
+          });
+        }}
+      />
+    </AnimatedBalao>
+  );
+}
+
 
             // Mensagens padrão
             return (
