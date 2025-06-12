@@ -20,79 +20,50 @@ export default function EditarCardapio() {
   const router = useRouter();
   const [categorias, setCategorias] = useState([]);
 
-  // Carrega o cardápio do banco ao abrir a tela
-  useEffect(() => {
-  const carregar = async () => {
+  const carregarCardapio = async () => {
     try {
       const resposta = await fetch(CARDAPIO_URL);
       const json = await resposta.json();
 
       if (json?.categorias) {
-  const formatadas = json.categorias.map((cat) => ({
-    ...cat,
-    id: cat._id,     // garante `cat.id`
-    _id: cat._id,    // garante `cat._id`
-    itens: cat.itens.map((item) => ({
-      ...item,
-      id: item._id || Date.now().toString() + Math.random(),
-      _id: item._id,
-    })),
-  }));
-  setCategorias(formatadas);
-}
-
+        const formatadas = json.categorias.map((cat) => ({
+          ...cat,
+          id: cat._id,
+          _id: cat._id,
+          itens: cat.itens.map((item) => ({
+            ...item,
+            id: item._id || Date.now().toString() + Math.random(),
+            _id: item._id,
+          })),
+        }));
+        setCategorias(formatadas);
+      }
     } catch (e) {
       console.log('❌ Erro ao carregar cardápio:', e);
     }
   };
 
-  carregar();
-}, []);
-
-const carregarCardapio = async () => {
-  try {
-    const resposta = await fetch(CARDAPIO_URL);
-    const json = await resposta.json();
-
-    if (json?.categorias) {
-      const formatadas = json.categorias.map((cat) => ({
-        ...cat,
-        id: cat._id,
-        _id: cat._id,
-        itens: cat.itens.map((item) => ({
-          ...item,
-          id: item._id || Date.now().toString() + Math.random(),
-          _id: item._id,
-        })),
-      }));
-      setCategorias(formatadas);
-    }
-  } catch (e) {
-    console.log('❌ Erro ao carregar cardápio:', e);
-  }
-};
-
-
+  useEffect(() => {
+    carregarCardapio();
+  }, []);
 
   const adicionarCategoria = () => {
-  const novoId = Date.now().toString();
-  setCategorias((prev) => [
-    ...prev,
-    {
-      id: novoId,
-      nome: '',
-      itens: [
-        {
-          id: Date.now().toString() + Math.random(), // item único
-          nome: '',
-          preco: ''
-        }
-      ],
-    },
-  ]);
-};
-
-
+    const novoId = Date.now().toString();
+    setCategorias((prev) => [
+      ...prev,
+      {
+        id: novoId,
+        nome: '',
+        itens: [
+          {
+            id: Date.now().toString() + Math.random(),
+            nome: '',
+            preco: ''
+          }
+        ],
+      },
+    ]);
+  };
 
   const atualizarCategoria = (id, campo, valor) => {
     setCategorias((prev) =>
@@ -101,65 +72,61 @@ const carregarCardapio = async () => {
   };
 
   const adicionarItem = (catId) => {
-  setCategorias((prev) =>
-    prev.map((cat) =>
-      cat.id === catId
-        ? {
-            ...cat,
-            itens: [
-              ...cat.itens,
-              {
-                id: Date.now().toString() + Math.random(), // item novo independente
-                nome: '',
-                preco: ''
-              },
-            ],
-          }
-        : cat
-    )
-  );
-};
-
-const excluirItem = async (catId, itemId) => {
-  if (!catId || !itemId) {
-    console.error('❌ ID indefinido:', { catId, itemId });
-    return;
-  }
-  try {
-    const resposta = await fetch(`${CARDAPIO_URL}/item/${catId}/${itemId}`, {
-      method: 'DELETE',
-    });
-
-    const json = await resposta.json();
-
-    if (!resposta.ok) {
-      throw new Error(json.erro || 'Erro ao excluir item');
-    }
-
-    // Atualiza a interface removendo o item
     setCategorias((prev) =>
       prev.map((cat) =>
         cat.id === catId
-  ? { ...cat, itens: cat.itens.filter((item) => item._id?.toString() !== itemId) }
-
+          ? {
+              ...cat,
+              itens: [
+                ...cat.itens,
+                {
+                  id: Date.now().toString() + Math.random(),
+                  nome: '',
+                  preco: ''
+                },
+              ],
+            }
           : cat
       )
     );
+  };
 
-    Toast.show('❌ Item excluído com sucesso!', {
-      duration: Toast.durations.SHORT,
-      position: Toast.positions.BOTTOM,
-    });
-  } catch (e) {
-    console.log('❌ Erro ao excluir item:', e);
-    Toast.show('Erro ao excluir item do banco', {
-      duration: Toast.durations.LONG,
-      position: Toast.positions.BOTTOM,
-    });
-  }
-};
+  const excluirItem = async (catId, itemId) => {
+    if (!catId || !itemId) {
+      console.error('❌ ID indefinido:', { catId, itemId });
+      return;
+    }
+    try {
+      const resposta = await fetch(`${CARDAPIO_URL}/item/${catId}/${itemId}`, {
+        method: 'DELETE',
+      });
 
+      const json = await resposta.json();
 
+      if (!resposta.ok) {
+        throw new Error(json.erro || 'Erro ao excluir item');
+      }
+
+      setCategorias((prev) =>
+        prev.map((cat) =>
+          cat.id === catId
+            ? { ...cat, itens: cat.itens.filter((item) => item._id?.toString() !== itemId) }
+            : cat
+        )
+      );
+
+      Toast.show('❌ Item excluído com sucesso!', {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
+    } catch (e) {
+      console.log('❌ Erro ao excluir item:', e);
+      Toast.show('Erro ao excluir item do banco', {
+        duration: Toast.durations.LONG,
+        position: Toast.positions.BOTTOM,
+      });
+    }
+  };
 
   const removerUltimoItem = (catId) => {
     setCategorias((prev) =>
@@ -173,100 +140,89 @@ const excluirItem = async (catId, itemId) => {
     );
   };
 
-  // Substitua a função `atualizarItem` pela versão corrigida:
-const atualizarItem = (catId, index, campo, valor) => {
-  const convertido = campo === 'preco' ? valor.replace(',', '.') : valor;
+  const atualizarItem = (catId, index, campo, valor) => {
+    const convertido = campo === 'preco' ? valor.replace(',', '.') : valor;
 
-  setCategorias((prev) =>
-    prev.map((cat) => {
-      if (cat.id !== catId) return cat;
+    setCategorias((prev) =>
+      prev.map((cat) => {
+        if (cat.id !== catId) return cat;
 
-      // Corrige para clonar cada item individualmente
-      const novosItens = cat.itens.map((it, i) =>
-        i === index ? { ...it, [campo]: convertido } : { ...it }
-      );
+        const novosItens = cat.itens.map((it, i) =>
+          i === index ? { ...it, [campo]: convertido } : { ...it }
+        );
 
-      return { ...cat, itens: novosItens };
-    })
-  );
-};
+        return { ...cat, itens: novosItens };
+      })
+    );
+  };
 
+  const excluirCategoria = async (catId) => {
+    try {
+      const resposta = await fetch(`${CARDAPIO_URL}/${catId}`, {
+        method: 'DELETE',
+      });
 
- const excluirCategoria = async (catId) => {
-  try {
-    console.log('🟡 Tentando excluir categoria com ID:', catId);
+      if (!resposta.ok) {
+        const texto = await resposta.text();
+        console.log('🔴 Erro bruto do backend:', texto);
+        throw new Error('Erro ao excluir categoria');
+      }
 
-    const resposta = await fetch(`${CARDAPIO_URL}/${catId}`, {
-      method: 'DELETE',
-    });
+      const json = await resposta.json();
 
-    if (!resposta.ok) {
-      const texto = await resposta.text(); // loga o erro HTML bruto
-      console.log('🔴 Erro bruto do backend:', texto);
-      throw new Error('Erro ao excluir categoria');
+      setCategorias((prev) => prev.filter((cat) => cat._id !== catId));
+
+      Toast.show('✅ Categoria excluída com sucesso!', {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
+    } catch (e) {
+      console.log('❌ Erro ao excluir categoria:', e);
+      Toast.show('❌ Erro ao excluir categoria do banco', {
+        duration: Toast.durations.LONG,
+        position: Toast.positions.BOTTOM,
+      });
     }
-
-    const json = await resposta.json();
-
-    // Remove do estado
-    setCategorias((prev) => prev.filter((cat) => cat._id !== catId));
-
-    Toast.show('✅ Categoria excluída com sucesso!', {
-      duration: Toast.durations.SHORT,
-      position: Toast.positions.BOTTOM,
-    });
-  } catch (e) {
-    console.log('❌ Erro ao excluir categoria:', e);
-    Toast.show('❌ Erro ao excluir categoria do banco', {
-      duration: Toast.durations.LONG,
-      position: Toast.positions.BOTTOM,
-    });
-  }
-};
-
-
+  };
 
   const salvarCardapio = async () => {
-  try {
-    const resposta = await fetch(CARDAPIO_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ categorias }),
-    });
+    try {
+      const resposta = await fetch(CARDAPIO_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categorias }),
+      });
 
-    const json = await resposta.json();
+      const json = await resposta.json();
 
-    if (!resposta.ok) throw new Error(json.erro || 'Erro desconhecido');
+      if (!resposta.ok) throw new Error(json.erro || 'Erro desconhecido');
 
-    // 🔄 Atualiza o estado com o que veio do backend (já com os _id certos)
-    if (json.categorias) {
-      const formatadas = json.categorias.map((cat) => ({
-        ...cat,
-        id: cat._id,
-        _id: cat._id,
-        itens: cat.itens.map((item) => ({
-          ...item,
-          id: item._id,
-          _id: item._id,
-        })),
-      }));
-      setCategorias(formatadas);
+      if (json.categorias) {
+        const formatadas = json.categorias.map((cat) => ({
+          ...cat,
+          id: cat._id,
+          _id: cat._id,
+          itens: cat.itens.map((item) => ({
+            ...item,
+            id: item._id,
+            _id: item._id,
+          })),
+        }));
+        setCategorias(formatadas);
+      }
+
+      Toast.show('Categorias salvas com sucesso!', {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
+    } catch (e) {
+      console.log('❌ Erro ao salvar categorias:', e);
+      Toast.show('Erro ao salvar categorias', {
+        duration: Toast.durations.LONG,
+        position: Toast.positions.BOTTOM,
+      });
     }
-
-    Toast.show('Categorias salvas com sucesso!', {
-      duration: Toast.durations.SHORT,
-      position: Toast.positions.BOTTOM,
-    });
-  } catch (e) {
-    console.log('❌ Erro ao salvar categorias:', e);
-    Toast.show('Erro ao salvar categorias', {
-      duration: Toast.durations.LONG,
-      position: Toast.positions.BOTTOM,
-    });
-  }
-};
-
-
+  };
 
   return (
     <ImageBackground
@@ -284,18 +240,14 @@ const atualizarItem = (catId, index, campo, valor) => {
             <TouchableOpacity onPress={() => router.replace('/painel-cozinha')} style={styles.botaoTopo}>
               <Text style={styles.botaoTexto}>Voltar Painel</Text>
             </TouchableOpacity>
-            
-
-      <TouchableOpacity onPress={() => router.replace('/')} style={styles.botaoTopo}>
+            <TouchableOpacity onPress={() => router.replace('/')} style={styles.botaoTopo}>
               <Text style={styles.botaoTexto}>Logout</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={carregarCardapio} style={styles.botaoRecarregar}>
-  <MaterialIcons name="refresh" size={24} color="#fff" />
-</TouchableOpacity>
-
+              <MaterialIcons name="refresh" size={24} color="#fff" />
+            </TouchableOpacity>
           </View>
         </View>
-        
 
         <ScrollView contentContainerStyle={{ padding: 16 }}>
           {categorias.map((cat) => (
@@ -308,33 +260,29 @@ const atualizarItem = (catId, index, campo, valor) => {
                 onChangeText={(text) => atualizarCategoria(cat.id || cat.id, 'nome', text)}
               />
               {cat.itens.map((item, index) => (
-  <View key={item.id} style={styles.itemLinha}>
-    <TextInput
-      placeholder="Nome do Prato"
-      placeholderTextColor="#999"
-      style={[styles.input, { flex: 1, marginRight: 8 }]}
-      value={item.nome}
-      onChangeText={(text) => atualizarItem(cat.id, index, 'nome', text)}
-    />
-    <TextInput
-      placeholder="Preço"
-      placeholderTextColor="#999"
-      keyboardType="numeric"
-      style={[styles.input, { width: 80 }]}
-      value={item.preco.toString()}
-      onChangeText={(text) => atualizarItem(cat.id, index, 'preco', text)}
-    />
-    <TouchableOpacity
-  onPress={() => excluirItem(cat._id, item._id)}
-  style={styles.botaoExcluirItem}
->
-  <Text style={styles.textoBotaoExcluirItem}>×</Text>
-</TouchableOpacity>
+                <View key={item.id} style={styles.itemLinha}>
+                  <TextInput
+                    placeholder="Nome do Prato"
+                    placeholderTextColor="#999"
+                    style={[styles.input, { flex: 1, marginRight: 8 }]}
+                    value={item.nome}
+                    onChangeText={(text) => atualizarItem(cat.id, index, 'nome', text)}
+                  />
+                  <TextInput
+                    placeholder="Preço"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    style={[styles.input, { width: 80 }]}
+                    // value={item.preco.toString()}
+                    value={item.preco != null ? item.preco.toString() : ''}
 
-
-  </View>
-))}
-
+                    onChangeText={(text) => atualizarItem(cat.id, index, 'preco', text)}
+                  />
+                  <TouchableOpacity onPress={() => excluirItem(cat._id, item._id)} style={styles.botaoExcluirItem}>
+                    <Text style={styles.textoBotaoExcluirItem}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TouchableOpacity onPress={() => adicionarItem(cat.id)} style={styles.adicionarItem}>
                   <Text style={styles.adicionarTexto}>+ Item</Text>
@@ -345,10 +293,8 @@ const atualizarItem = (catId, index, campo, valor) => {
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <TouchableOpacity onPress={() => excluirCategoria(cat._id)} style={styles.excluirCategoria}>
-  <Text style={styles.cancelarTexto}>Excluir Categoria</Text>
-</TouchableOpacity>
-
-
+                  <Text style={styles.cancelarTexto}>Excluir Categoria</Text>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={salvarCardapio} style={styles.salvarBtn}>
                   <Text style={styles.salvarTexto}>Salvar Cardápio</Text>
                 </TouchableOpacity>
